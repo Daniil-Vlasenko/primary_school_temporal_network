@@ -1,0 +1,58 @@
+---
+title: "Primary school temporal network"
+author: "Vlasenko Daniil"
+date: "2023-06-19"
+output: html_document
+---
+
+# Данные 
+Данные взяты [отсюда](http://www.sociopatterns.org/datasets/primary-school-temporal-network-data). Данные описывают взаимодействия учеников и учителей начальной школы в течении недели. У каждого участника эксперемента при себе было устройство, которое фиксировало каждые 20 секунд, с кем он сейчас контактирует.
+
+Через анализ этих данных я хочу изучить на практике теорию, изложенную в книги [Network science](http://networksciencebook.com/) и познакомиться с вариантом библиотеки igraph для языка R.
+
+Подключаем необходимые билиотеки:
+```{r, message=FALSE}
+library(dplyr)
+library(igraph)
+library(tidyr)
+```
+
+Читаем данные:
+```{r}
+data1 <- read.csv("primaryschool.csv", sep="\t", header=FALSE)
+colnames(data1) <- c("time", "i", "j", "Ci", "Cj")
+data2 <- read.csv("metadata_primaryschool.txt", sep="\t", header=FALSE)
+colnames(data2) <- c("i", "Ci", "sex")
+```
+
+data1 содержит информацию о том, когда (time) кто с кем (i, j) контактировал и из какого они класса или являются ли учителем (Ci, Cj). data2 содержит дополнительную информаицю о поле учеников. 
+
+Хотим работать с взыешенным графом, поэтому посчитаем для каждой пары индивидов (ученик или учитель) число контактов (weight) и затем удалим из данных пары индивидов, которые не контактировали друг с другом.
+```{r}
+edges <- data.frame(table(data1 %>% dplyr::select(i, j))) %>%
+  filter(Freq > 0) %>% rename(weight=Freq)
+```
+
+Создадим взвешенный неориентированный граф:
+```{r}
+network <- graph_from_data_frame(edges, directed=FALSE, vertices=data2)
+```
+
+# Анализ 
+Проверим характеристики графа:
+```{r}
+network
+```
+
+Видно, что граф имеет 242 вершины и 8317 ребер.
+
+Видимо в целях ананимности в исходных данных нет информации о полах учителей. 
+Таким образом у вершин графа атрибут sex содержит значения "Unknown" заменим 
+это значение на NA
+```{r}
+V(network)$sex[V(network)$sex == "Unknown"] <- NA
+V(network)$sex
+```
+
+
+
