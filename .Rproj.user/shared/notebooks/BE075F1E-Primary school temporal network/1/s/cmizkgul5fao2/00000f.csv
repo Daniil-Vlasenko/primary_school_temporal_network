@@ -1,0 +1,2 @@
+"0","edges <- data.frame(table(data1 %>% dplyr::select(i, j))) %>%"
+"0","  filter(Freq > 0)"

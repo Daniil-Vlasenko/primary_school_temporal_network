@@ -1,0 +1,4 @@
+"0","data1 <- read.csv(""primaryschool.csv"", sep=""\t"", header=FALSE)"
+"0","colnames(data1) <- c(""time"", ""i"", ""j"", ""classi"", ""classj"")"
+"0","data2 <- read.csv(""metadata_primaryschool.txt"", sep=""\t"", header=FALSE)"
+"0","colnames(data2) <- c(""i"", ""class"", ""sex"")"

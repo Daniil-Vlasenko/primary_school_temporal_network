@@ -1,0 +1,544 @@
+---
+title: "R_task"
+author: "Vlasenko Daniil"
+date: "2023-06-16"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+Подключаем необходимые библиотеки:
+```{r, message=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(GGally)
+library(arrow)
+```
+
+# Данные
+## Ознакомление с данными
+Читаем данные:
+```{r}
+data1 <- read_parquet("source1.pq")
+data2 <- read_parquet("source2.pq")
+```
+
+```{r}
+head(data1); head(data2)
+```
+
+Узнаем число индивидов в обоих датафреймах:
+```{r}
+nrow(data1); nrow(data2)
+```
+
+
+Посчитаем число пропусков в данных:
+```{r}
+colSums(is.na(data1)); colSums(is.na(data1));
+```
+
+То есть пропуски есть в стобцах, которые несут информацию о ТВ каналах. В
+задании говорится об этом. Означает, что человек не смотрел ТВ в этот день.
+Но в данных можно заметить (далее в анализе проявилось), что некоторые факторы 
+содержат значения "NA", которые не фиксируются функцией is.na(), посчитаем эти 
+случаи отдельно:
+
+```{r}
+print(paste("data1$educ, count of NA:", nrow(data1[data1$educ == "NA",]))) 
+print(paste("data1$famSize, count of NA:", nrow(data1[data1$famSize == "NA",])))
+print(paste("data1$occupation, count of NA:", nrow(data1[data1$occupation == "NA",])))
+print(paste("data1$sex, count of NA:", nrow(data1[data1$sex == "NA",])))
+print(paste("data1$work, count of NA:", nrow(data1[data1$work == "NA",])))
+print(paste("data1$ageGroup, count of NA:", nrow(data1[data1$ageGroup == "NA",])))
+
+print(paste("data2$educ, count of NA:", nrow(data2[data2$educ == "NA",]))) 
+print(paste("data2$famSize, count of NA:", nrow(data2[data2$famSize == "NA",])))
+print(paste("data2$occupation, count of NA:", nrow(data2[data2$occupation == "NA",])))
+print(paste("data2$sex, count of NA:", nrow(data2[data2$sex == "NA",])))
+print(paste("data2$work, count of NA:", nrow(data2[data2$work == "NA",])))
+print(paste("data2$ageGroup, count of NA:", nrow(data2[data2$ageGroup == "NA",])))
+```
+
+То есть в data1 все же есть пропуски в соцдем признаке occupation. 
+Исправим это в слудующем разделе.
+
+## Объединение даннных
+Проверим одинаковые ли имена у признаков:
+```{r}
+colnames(data1) == colnames(data2)
+```
+
+Одинаковые. В задании сказано, что данные не пересекаются, но можно заметить, 
+что факторы имеют разные значения. Перед объединением данных значения факторов 
+нужно переименовать.
+
+```{r}
+data2[data2$educ == "среднее", 5] <- "medium"
+data2[data2$educ == "высшее", 5] <- "high"
+```
+
+```{r}
+data2[data2$famSize == "1 человек в семье", 6] <- "1 person"
+data2[data2$famSize == "2 человека в семье", 6] <- "2 persons"
+data2[data2$famSize == "3 человека в семье", 6] <- "3 persons"
+data2[data2$famSize == "4+ человека в семье", 6] <- "4+ persons"
+```
+
+В данных есть факоторые, которые присущи только одному из двух датафреймов, 
+в data1\$occupation есть такой фактор как "NA", а в data2\$occupation есть "служащие".
+Оставим их обоих. Возможно, это одно и тоже.
+```{r}
+data2[data2$occupation == "др. неработающие", 7] <- "other unemployed manager"
+data2[data2$occupation == "руководители", 7] <- "manager"
+data2[data2$occupation == "рабочие", 7] <- "employees"
+data2[data2$occupation == "специалисты", 7] <- "specialists"
+data2[data2$occupation == "домохозяйки", 7] <- "housewives"
+data2[data2$occupation == "учащиеся", 7] <- "students"
+data2[data2$occupation == "служащие", 7] <- "military"
+```
+
+```{r}
+data2[data2$sex == "Женщины", 8] <- "male"
+data2[data2$sex == "Мужчины", 8] <- "female"
+```
+
+```{r}
+data2[data2$work == "работает", 9] <- "yes"
+data2[data2$work == "не работает", 9] <- "no"
+```
+
+Факторизуем или приведем к numeric необходимые признаки.
+```{r}
+data2 <- data2 %>% mutate(educ = as.factor(educ) ,famSize = as.factor(famSize), 
+                          occupation = as.factor(occupation), sex = as.factor(sex),
+                          work = as.factor(work), ageGroup = as.factor(ageGroup),
+                          age = as.numeric(age))
+```
+
+Теперь объединим данные в одну таблицу, чтобы было удобно с ней работать.
+И сконцентрируемся на данных людей, которые смотрят ТВ, то есть удалим 
+строки с NA в признаках, несущих информацию о просмотре ТВ:
+```{r}
+data1$source <- 1
+data2$source <- 2
+data <- rbind(data1, data2) %>% na.omit()
+data$source <- as.factor(data$source)
+```
+
+Поправим данные occupation, заменим "NA" на NA:
+```{r}
+levels(data$occupation)[levels(data$occupation) == "NA"] <- NA
+```
+
+# Предварительный анализ
+Проверим наличие выбросов в данных. Только age и duration являются numeric,
+поэтому проверим их.
+```{r}
+ggplot(data, aes(x=source, y=age)) + 
+  geom_violin()
+
+ggplot(data, aes(x=source, y=duration)) + 
+  geom_violin()
+```
+
+Видно, что с age все хорошо. А в duration явно есть выбросы, так как
+присутсвуют индивиды (строки таблицы), продолжительность просмотра которых превышает 
+75000 секунд (20 часов), то есть ТВ работает фоном. 
+Средняя продолжительность фильма - 2 часа, будем рассматривать индивидов, 
+продолжительность просмотра которых не больше 4х часов, вряд ли кто-то способен 
+смотреть ТВ не фоном так долго. Продолжительность коротких передач примерно 
+30 минут, поэтому удалим из данных идивидов, duration которых 
+меньше 15 минут, чтобы исключить людей, которые находятся в поиске интересующего контента.
+Логарифмируем данные, так как имеем дело с большими хвостами. Посмотрим на урезанный график.
+```{r}
+data <- data %>% filter(duration > 15*60, duration < 4*60*60) %>% 
+  mutate(duration = log(duration))
+ggplot(data, aes(x=source, y=duration)) + 
+  geom_violin()
+```
+
+Теперь все выглядит более приятно.
+
+# Анализ
+Данные боагтые, сконцентрируемся на сравнении source1 и source2 в связи с ageGroup или age.
+
+## Сравнение распределений duration в течении всей недели
+Изобразим распределения с помощью boxplot-ов для того, чтобы сравнить квартили 
+и размахи распределений:
+```{r}
+data %>% ggplot(aes(x=ageGroup, y=duration, colour=source)) + 
+  geom_boxplot()
+```
+
+Проведем двусторонний t-тест.
+```{r}
+for(i in unique(data$ageGroup)) {
+  print(paste("p.value of t-test for", i, ":", t.test(
+    filter(data, ageGroup == i, source == 1)$duration, 
+    filter(data, ageGroup == i, source == 2)$duration)$p.value))
+}
+```
+
+С уровнем значимости 0.05 не отвергается гипотеза о равенстве мат. ожиданий 
+для групп 18-24 и 12-17. При этом на графике выше видно, что размах у source1 больше,
+проведем тест Левена для проверки равенств дисперсий:
+```{r}
+for(i in unique(data$ageGroup)) {
+  print(paste("p.value of Levene’s test for", i, ":", t.test(
+    abs(filter(data, ageGroup == i, source == 1)$duration - 
+        mean(filter(data, ageGroup == i, source == 1)$duration, na.rm = TRUE)), 
+    abs(filter(data, ageGroup == i, source == 2)$duration - 
+        mean(filter(data, ageGroup == i, source == 2)$duration, na.rm = TRUE)))$p.value))
+}
+```
+
+С уровнем значимости 0.05 отвергаются все гипотезы о равенстве дисперсий между 
+source1 и source2.
+
+## Охват продуктов каналов в течении всей недели
+Рассмотрим топ 3 продукта для каждой возрастной группы.
+```{r, message=FALSE}
+products <- data %>% distinct(productid, .keep_all=TRUE) %>% 
+  dplyr::select(productid, channel)
+
+reach.ageGroup <- data %>% 
+  group_by(source, ageGroup, productid) %>% 
+  summarise(avg.reach = sum(Population) / 7) %>% 
+  arrange(desc(avg.reach)) %>% 
+  slice(1:3)
+
+reach.ageGroup <- merge(reach.ageGroup, products, by="productid")
+```
+
+Изобразим результаты для наглядности:
+
+## {.tabset .unlisted .unnumbered}
+
+### 12-17
+
+```{r}
+reach.ageGroup[reach.ageGroup$ageGroup == "12-17",] %>%
+  ggplot(aes(fill=channel, y=avg.reach, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+reach.ageGroup[reach.ageGroup$ageGroup == "12-17",] %>% arrange(source)
+```
+
+### 18-24
+
+```{r}
+reach.ageGroup[reach.ageGroup$ageGroup == "18-24",] %>%
+  ggplot(aes(fill=channel, y=avg.reach, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+reach.ageGroup[reach.ageGroup$ageGroup == "18-24",] %>% arrange(source)
+```
+
+### 25-34
+
+```{r}
+reach.ageGroup[reach.ageGroup$ageGroup == "25-34",] %>%
+  ggplot(aes(fill=channel, y=avg.reach, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+reach.ageGroup[reach.ageGroup$ageGroup == "25-34",] %>% arrange(source)
+```
+
+### 35-44
+
+```{r}
+reach.ageGroup[reach.ageGroup$ageGroup == "35-44",] %>%
+  ggplot(aes(fill=channel, y=avg.reach, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+reach.ageGroup[reach.ageGroup$ageGroup == "35-44",] %>% arrange(source)
+```
+
+### 45-54
+
+```{r}
+reach.ageGroup[reach.ageGroup$ageGroup == "45-54",] %>%
+  ggplot(aes(fill=channel, y=avg.reach, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+reach.ageGroup[reach.ageGroup$ageGroup == "45-54",] %>% arrange(source)
+```
+
+### 55-64
+
+```{r}
+reach.ageGroup[reach.ageGroup$ageGroup == "55-64",] %>%
+  ggplot(aes(fill=channel, y=avg.reach, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+reach.ageGroup[reach.ageGroup$ageGroup == "55-64",] %>% arrange(source)
+```
+
+### 65+
+
+```{r}
+reach.ageGroup[reach.ageGroup$ageGroup == "65+",] %>%
+  ggplot(aes(fill=channel, y=avg.reach, x=source)) + 
+  geom_bar(position="dodge", stat="identity")
+
+reach.ageGroup[reach.ageGroup$ageGroup == "65+",] %>% arrange(source)
+```
+
+## {.unlisted .unnumbered}
+
+Для каждой возрастной группы Россия 1 является общим продуктом. Для людей 
+страрше 55 лет НТВ так же общий топ продукт в данной катигории. Еще можно 
+заметить, что топ продукты по охвату одинаковые для возрастных групп 55-64 и 
+65+ внутри каждого ресурса данных.
+
+## Среднее время просмотра канала
+
+Рассмотрим топ 3 продукта для каждой возрастной группы.
+```{r, message=FALSE}
+avgDuration.ageGroup <- data %>% 
+  group_by(source, ageGroup, productid) %>% 
+  summarise(avg.duration = sum(Population * duration) / sum(Population)) %>%
+  arrange(desc(avg.duration)) %>% 
+  slice(1:3)
+
+avgDuration.ageGroup <- merge(avgDuration.ageGroup, products, by="productid")
+```
+
+## {.tabset .unlisted .unnumbered}
+
+### 12-17
+
+```{r}
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "12-17",] %>%
+  ggplot(aes(fill=channel, y=avg.duration, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "12-17",] %>% arrange(source)
+```
+
+### 18-24
+
+```{r}
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "18-24",] %>%
+  ggplot(aes(fill=channel, y=avg.duration, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "18-24",] %>% arrange(source)
+```
+
+### 25-34
+
+```{r}
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "25-34",] %>%
+  ggplot(aes(fill=channel, y=avg.duration, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "25-34",] %>% arrange(source)
+```
+
+### 35-44
+
+```{r}
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "35-44",] %>%
+  ggplot(aes(fill=channel, y=avg.duration, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "35-44",] %>% arrange(source)
+```
+
+### 45-54
+
+```{r}
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "45-54",] %>%
+  ggplot(aes(fill=channel, y=avg.duration, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "45-54",] %>% arrange(source)
+```
+
+### 55-64
+
+```{r}
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "55-64",] %>%
+  ggplot(aes(fill=channel, y=avg.duration, x=source)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "55-64",] %>% arrange(source)
+```
+
+### 65+
+
+```{r}
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "65+",] %>%
+  ggplot(aes(fill=channel, y=avg.duration, x=source)) + 
+  geom_bar(position="dodge", stat="identity")
+
+avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "65+",] %>% arrange(source)
+```
+
+## {.unlisted .unnumbered}
+
+Единственный общий продукт для людей от 65 лет является ДОМ КИНО, больше пересечений нет в топ 3.
+
+## Корреляция возраста и длительности просмтра ТВ
+Проверим как коррелируют age и время, которое человек смотрел ТВ в течении недели, 
+сгруппировав выборку по людям.
+```{r, message=FALSE}
+totalDuration.age <- data %>%
+  group_by(source, id) %>% 
+  summarise(totalDuration = sum(duration),
+            age = unique(age),
+            educ = unique(educ),
+            famSize = unique(famSize),
+            occupation = unique(occupation),
+            sex = unique(sex),
+            work = unique(work)) %>%
+  ungroup() %>% ungroup()
+
+totalDuration.age %>%
+  ggplot(aes(x=age, y=totalDuration, color=source)) +
+  geom_point(alpha=0.5) +
+  geom_smooth(method="lm")
+```
+
+Посчитаем корреляцию Пирсона для обоих ресурсов:
+```{r}
+print(paste("correlation for source 1:", 
+            cor(filter(totalDuration.age, source == 1)$age, 
+                filter(totalDuration.age, source == 1)$totalDuration)))
+print(paste("correlation for source 2:", 
+            cor(filter(totalDuration.age, source == 2)$age, 
+                filter(totalDuration.age, source == 2)$totalDuration)))
+```
+
+Посчитаем частную корреляцию возраста и временем просмотра ТВ за всю неделю за 
+вычетом значений других факторов (образования, размера семьи, профессии, пола) для 
+обоих ресурсов (занятость не учитываем, так как пенсионеры и дети не работают, поэтому
+она будет сильно коррелировать с возрастом).
+
+Для этого прийдется трансформировать факторы в dummy variable, так как у них могут быть
+нелинейные связи с интересующими нас двумя признаками:
+```{r, message=FALSE}
+library(fastDummies)
+
+data.dummy <- totalDuration.age %>% 
+  filter(occupation != "NA") %>%
+  dummy_cols(select_columns=c("educ", "famSize", "occupation", "sex")) %>%
+  dplyr::select(-id, -educ, -famSize, -occupation, -sex, -work)
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(ppcor)
+
+pcor(x=filter(data.dummy, source == 1) %>% dplyr::select(-source), method="pearson")$estimate[2,1]
+pcor(x=filter(data.dummy, source == 2) %>% dplyr::select(-source), method="pearson")$estimate[2,1]
+```
+
+Частная корреляция меньше обычной, но эффект положительной взаимосвязи остался для
+обоих ресурсов.
+
+## Распределения весов
+Напоследок интересно узнать одинаковые ли распределения имеют веса в обоих ресурсах 
+для разных возрастных групп. Для этого сгрупперуем выборку по людям, посчитав для каждого 
+человека его средний вес (вес для одного и того же челвоека меняется в зависимости от дня):
+```{r, message=FALSE}
+Population <- data %>%
+  group_by(source, id) %>% 
+  summarise(Population = mean(unique(Population)),
+            ageGroup = unique(ageGroup)) %>%
+  ungroup() %>% ungroup()
+```
+
+Визуализируем распределния и используем парный критерий Колмогорова-Смирнова:
+
+## {.tabset .unlisted .unnumbered}
+
+### 12-17
+
+```{r, warning=FALSE, message=FALSE}
+Population[Population$ageGroup == "12-17",] %>%
+  ggplot(aes(x=Population, fill=source)) +
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5)
+
+ks.test((Population %>% filter(ageGroup == "12-17", source == 1))$Population, 
+        (Population %>% filter(ageGroup == "12-17", source == 2))$Population)$p.value
+```
+
+### 18-24
+
+```{r, warning=FALSE, message=FALSE}
+Population[Population$ageGroup == "18-24",] %>%
+  ggplot(aes(x=Population, fill=source)) +
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5)
+
+ks.test((Population %>% filter(ageGroup == "18-24", source == 1))$Population, 
+        (Population %>% filter(ageGroup == "18-24", source == 2))$Population)$p.value
+```
+
+### 25-34
+
+```{r, warning=FALSE, message=FALSE}
+Population[Population$ageGroup == "25-34",] %>%
+  ggplot(aes(x=Population, fill=source)) +
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5)
+
+ks.test((Population %>% filter(ageGroup == "25-34", source == 1))$Population, 
+        (Population %>% filter(ageGroup == "25-34", source == 2))$Population)$p.value
+```
+
+### 35-44
+
+```{r, warning=FALSE, message=FALSE}
+Population[Population$ageGroup == "35-44",] %>%
+  ggplot(aes(x=Population, fill=source)) +
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5)
+
+ks.test((Population %>% filter(ageGroup == "35-44", source == 1))$Population, 
+        (Population %>% filter(ageGroup == "35-44", source == 2))$Population)$p.value
+```
+
+### 45-54
+
+```{r, warning=FALSE, message=FALSE}
+Population[Population$ageGroup == "45-54",] %>%
+  ggplot(aes(x=Population, fill=source)) +
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5)
+
+ks.test((Population %>% filter(ageGroup == "45-54", source == 1))$Population, 
+        (Population %>% filter(ageGroup == "45-54", source == 2))$Population)$p.value
+```
+
+### 55-64
+
+```{r, warning=FALSE, message=FALSE}
+Population[Population$ageGroup == "55-64",] %>%
+  ggplot(aes(x=Population, fill=source)) +
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5)
+
+ks.test((Population %>% filter(ageGroup == "55-64", source == 1))$Population, 
+        (Population %>% filter(ageGroup == "55-64", source == 2))$Population)$p.value
+```
+
+### 65+
+
+```{r, warning=FALSE, message=FALSE}
+Population[Population$ageGroup == "65+",] %>%
+  ggplot(aes(x=Population, fill=source)) +
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5)
+
+ks.test((Population %>% filter(ageGroup == "65+", source == 1))$Population, 
+        (Population %>% filter(ageGroup == "65+", source == 2))$Population)$p.value
+```
+
+## {.unlisted .unnumbered}
+
+Распределения весов в двух ресурсах для каждой возрастной группы различные.
+Используемый критерий имеет довольно общую альтернативную гипотезу, поэтому у него 
+малая мощность, но при этом он все равно отверг все гипотезы о равенстве распределений 
+с уровнем значимости 0.05.
+
+
+
