@@ -18,6 +18,7 @@ output:
 library(dplyr)
 library(igraph)
 library(tidyr)
+library(RColorBrewer)
 ```
 
 Читаем данные:
@@ -90,4 +91,35 @@ top.10.degree; top.10.betweenness
 ```{r}
 sum(top.10.degree %in% top.10.betweenness)
 ```
+
+Вычислим плотность графа:
+```{r}
+edge_density(network)
+```
+
+Вычилим плотности подграфов внутри кажого класса, они должна быть больше:
+```{r}
+class <- unique(V(network)$class)[unique(V(network)$class) != "Teachers"]
+
+for(i in class) {
+  subgraph <- induced_subgraph(network, V(network)[class == i])
+  print(paste("density of", i, ":", edge_density(subgraph)))
+}
+```
+
+Так и выходит, логично, что дети внутри класса контактируют друг с другом больше.
+
+Нарисуем граф:
+```{r}
+set.seed(1)
+pal<-brewer.pal(length(unique(V(network)$class)), "Set3")
+
+plot(network, edge.color='black', vertex.label.cex=0.3,
+     vertex.color=pal[as.numeric(as.factor(vertex_attr(network, "class")))],
+     vertex.size=sqrt(V(network)$degree)/2.5, edge.width=sqrt(E(network)$Freq/3000),
+     layout=layout.fruchterman.reingold)
+```
+
+
+
 

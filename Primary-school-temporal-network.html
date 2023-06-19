@@ -1525,17 +1525,17 @@ data2 содержит дополнительную информаицю о по
 индивидов (ученик или учитель) число контактов (weight) и затем удалим
 из данных пары индивидов, которые не контактировали друг с другом.</p>
 <pre class="r"><code>edges &lt;- data.frame(table(data1 %&gt;% dplyr::select(i, j))) %&gt;%
-  filter(Freq &gt; 0) %&gt;% rename(weight=Freq)</code></pre>
+  filter(Freq &gt; 0)</code></pre>
 <p>Создадим взвешенный неориентированный граф:</p>
 <pre class="r"><code>network &lt;- graph_from_data_frame(edges, directed=FALSE, vertices=data2)</code></pre>
 </div>
 <div id="анализ" class="section level1">
 <h1>Анализ</h1>
-<p>Проверим характеристики графа:</p>
+<p>Проверим данные графа:</p>
 <pre class="r"><code>network</code></pre>
-<pre><code>## IGRAPH 45f1e98 UNW- 242 8317 -- 
-## + attr: name (v/c), class (v/c), sex (v/c), weight (e/n)
-## + edges from 45f1e98 (vertex names):
+<pre><code>## IGRAPH 1760090 UN-- 242 8317 -- 
+## + attr: name (v/c), class (v/c), sex (v/c), Freq (e/n)
+## + edges from 1760090 (vertex names):
 ##  [1] 1426--1427 1426--1428 1427--1428 1426--1429 1427--1429 1428--1429
 ##  [7] 1426--1430 1427--1430 1428--1430 1429--1430 1426--1431 1427--1431
 ## [13] 1428--1431 1429--1431 1430--1431 1426--1434 1427--1434 1428--1434
@@ -1550,41 +1550,59 @@ data2 содержит дополнительную информаицю о по
 образом у вершин графа атрибут sex содержит значения “Unknown” заменим
 это значение на NA:</p>
 <pre class="r"><code>V(network)$sex[V(network)$sex == &quot;Unknown&quot;] &lt;- NA
-V(network)$sex[1:100]</code></pre>
-<pre><code>##   [1] &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot;
-##  [19] &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot;
-##  [37] &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; NA  &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot;
-##  [55] &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot;
-##  [73] &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;F&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; NA  &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; NA  &quot;F&quot; &quot;F&quot; &quot;M&quot;
-##  [91] &quot;F&quot; &quot;M&quot; NA  NA  &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot;</code></pre>
+V(network)$sex[1:50]</code></pre>
+<pre><code>##  [1] &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot;
+## [20] &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; &quot;F&quot; &quot;F&quot;
+## [39] &quot;M&quot; &quot;M&quot; &quot;F&quot; &quot;F&quot; NA  &quot;M&quot; &quot;F&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;M&quot; &quot;F&quot;</code></pre>
 <p>Также вершины графа несут информацию о классе ученика или о том, что
 эта вершина связана с учителем:</p>
-<pre class="r"><code>V(network)$class[1:100]</code></pre>
-<pre><code>##   [1] &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;      
-##   [7] &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;      
-##  [13] &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;      
-##  [19] &quot;5A&quot;       &quot;5B&quot;       &quot;5A&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5A&quot;      
-##  [25] &quot;5A&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5A&quot;       &quot;5B&quot;       &quot;5B&quot;      
-##  [31] &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;4A&quot;       &quot;5A&quot;       &quot;5A&quot;      
-##  [37] &quot;4A&quot;       &quot;4A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;4A&quot;       &quot;5A&quot;      
-##  [43] &quot;Teachers&quot; &quot;5A&quot;       &quot;4A&quot;       &quot;4A&quot;       &quot;4A&quot;       &quot;4A&quot;      
-##  [49] &quot;4A&quot;       &quot;4A&quot;       &quot;4A&quot;       &quot;4A&quot;       &quot;4A&quot;       &quot;4A&quot;      
-##  [55] &quot;4A&quot;       &quot;3B&quot;       &quot;3B&quot;       &quot;3B&quot;       &quot;3B&quot;       &quot;3B&quot;      
-##  [61] &quot;3B&quot;       &quot;5B&quot;       &quot;3B&quot;       &quot;3B&quot;       &quot;3B&quot;       &quot;3B&quot;      
-##  [67] &quot;3B&quot;       &quot;5B&quot;       &quot;3B&quot;       &quot;3B&quot;       &quot;5B&quot;       &quot;5B&quot;      
-##  [73] &quot;3B&quot;       &quot;4B&quot;       &quot;2A&quot;       &quot;2A&quot;       &quot;2A&quot;       &quot;2A&quot;      
-##  [79] &quot;2A&quot;       &quot;2A&quot;       &quot;2A&quot;       &quot;4A&quot;       &quot;2A&quot;       &quot;2A&quot;      
-##  [85] &quot;4B&quot;       &quot;4B&quot;       &quot;5A&quot;       &quot;2A&quot;       &quot;2A&quot;       &quot;2A&quot;      
-##  [91] &quot;2A&quot;       &quot;2A&quot;       &quot;Teachers&quot; &quot;Teachers&quot; &quot;1B&quot;       &quot;1B&quot;      
-##  [97] &quot;1B&quot;       &quot;1B&quot;       &quot;1B&quot;       &quot;1B&quot;</code></pre>
+<pre class="r"><code>V(network)$class[1:50]</code></pre>
+<pre><code>##  [1] &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;      
+##  [7] &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5B&quot;      
+## [13] &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;      
+## [19] &quot;5A&quot;       &quot;5B&quot;       &quot;5A&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5A&quot;      
+## [25] &quot;5A&quot;       &quot;5B&quot;       &quot;5B&quot;       &quot;5A&quot;       &quot;5B&quot;       &quot;5B&quot;      
+## [31] &quot;5A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;4A&quot;       &quot;5A&quot;       &quot;5A&quot;      
+## [37] &quot;4A&quot;       &quot;4A&quot;       &quot;5A&quot;       &quot;5A&quot;       &quot;4A&quot;       &quot;5A&quot;      
+## [43] &quot;Teachers&quot; &quot;5A&quot;       &quot;4A&quot;       &quot;4A&quot;       &quot;4A&quot;       &quot;4A&quot;      
+## [49] &quot;4A&quot;       &quot;4A&quot;</code></pre>
 <p>У ребер в графе есть веса:</p>
-<pre class="r"><code>E(network)$weight[1:100]</code></pre>
-<pre><code>##   [1]  27  45   4  75 100   9  19   4   4   9  43  63  16  75  15   8  20   2
-##  [19]  11   4  43  12   5   4   5   7  16   3  23  44  19  62   4  42   8   6
-##  [37]  27  13  14  36   3  41   8  11  29   8   8   4   3   1   2   6   3   2
-##  [55]  44  45   4  30   9  31  71  15  38  25   5   1   1   4   1   1   3   5
-##  [73]   4  11   1   8   2   3   3   3   1   2   3  38   2   1  40   1  45  46
-##  [91]   3   7  11   3  10  16  56  24   6 116</code></pre>
+<pre class="r"><code>E(network)$Freq[1:50]</code></pre>
+<pre><code>##  [1]  27  45   4  75 100   9  19   4   4   9  43  63  16  75  15   8  20   2  11
+## [20]   4  43  12   5   4   5   7  16   3  23  44  19  62   4  42   8   6  27  13
+## [39]  14  36   3  41   8  11  29   8   8   4   3   1</code></pre>
+<p>Добавим к вершинами атрибут degree, который будет отражать степень
+вершины:</p>
+<pre class="r"><code>V(network)$degree &lt;- degree(network)
+V(network)$degree[1:50]</code></pre>
+<pre><code>##  [1]  83  47  82  64  37  71  94  39  95  76  32  96  53  77  57 111  98  63  48
+## [20]  61  84  53  46  98  44  95  81  49  65  76  83  59 106  82  76  73  93  33
+## [39]  39  56  41  72  40  71  23  47  49  92  96  26</code></pre>
+<p>Добавим к вершинам атрибут betweenness, которй отражает
+посредничество вершины (число коротких путей проходящих через нее без
+учета весов ребер):</p>
+<pre class="r"><code>V(network)$betweenness &lt;- betweenness(network)
+V(network)$betweenness[1:50]</code></pre>
+<pre><code>##  [1]  93.488540  49.294495  68.463923  75.040676   9.921754  78.090579
+##  [7] 159.287311  14.898605 141.760735  75.138028   4.147938 150.020685
+## [13]  44.163870  82.720868  38.174999 199.385065 193.162210  96.960504
+## [19]  39.455647  51.493603 106.710884  33.589866  43.042869 196.529788
+## [25]  30.293177 180.948999  83.333606  25.798634  63.041742  87.716326
+## [31]  77.940547  65.859302 187.141413 128.546412  67.275573  64.225646
+## [37] 189.762736  20.986278   9.541660  73.398585  32.501890  62.225397
+## [43]  52.744677 107.895466   0.850121  39.809843  37.134287 120.344129
+## [49] 149.577857   3.808084</code></pre>
+<p>Найдем топ 10 центральныйх вершин, основываясь на степенях и
+посреднечествах вершин:</p>
+<pre class="r"><code>top.10.degree &lt;- order(V(network)$degree, decreasing=TRUE)[1:10]
+top.10.betweenness &lt;- order(V(network)$betweenness, decreasing=TRUE)[1:10]
+
+top.10.degree; top.10.betweenness</code></pre>
+<pre><code>##  [1]  56 171 158 103  57  99  69 117 224 123</code></pre>
+<pre><code>##  [1]  56 158 224  57  99  79  69 205 123  84</code></pre>
+<p>Число общих вершин в двух векторах:</p>
+<pre class="r"><code>sum(top.10.degree %in% top.10.betweenness)</code></pre>
+<pre><code>## [1] 7</code></pre>
 </div>
 
 
