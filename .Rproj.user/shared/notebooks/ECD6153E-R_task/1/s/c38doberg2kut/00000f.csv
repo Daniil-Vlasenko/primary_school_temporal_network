@@ -1,0 +1,9 @@
+"0","library(fastDummies)"
+"0",""
+"0","data.dummy <- totalDuration.age %>% "
+"0","  filter(occupation != ""NA"") %>%"
+"0","  dummy_cols(select_columns=c(""educ"", ""famSize"", ""occupation"", ""sex"")) %>%"
+"0","  dplyr::select(-id, -educ, -famSize, -occupation, -sex, -work)"
+"2","Error in totalDuration.age %>% filter(occupation != ""NA"") %>% dummy_cols(select_columns = c(""educ"",  : 
+  could not find function ""%>%""
+"
