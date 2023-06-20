@@ -1,12 +1,58 @@
 ---
-title: "R_task"
-author: "Vlasenko Daniil"
+title: "Тестовое задания Mediascope"
+author: "Власенко Даниил"
 date: "2023-06-16"
 output: 
   html_document:
     toc: true
     toc_float: true
+    toc_depth: 5
+    theme: default
+    highlight: null
 ---
+
+Есть 2 набора данных по просмотру ТВ каналов (source1 и source2) за один и тот же период - неделя c 22 по 28 февраля. Каждая запись включает информацию о промежутке времени, в течение которого респондент смотрел определенный канал и список соцдем характеристик. Есть записи в которых есть только соцдем характеристики и вес. Такие респонденты не смотрели ТВ в расчетный день. Необходимо проанализировать и сделать сравнительный анализ данных source1 и source2.
+ 
+Данные source1 и source2 не пересекаются, то есть они относятся к разным респондентам, но все они проживают в одном и том же городе. Cумма весов в каждый день совпадает с численностью населения города.
+
+Существует несколько основных показателей, которые можно рассчитать на основе данных о просмотре ТВ: 
+
+- Reach (охват):
+  
+  - сумма весов респондетов, которые хотя бы раз за сутки посмотрели канал;
+  - сумма средних весов респондентов за период, которые хотя бы один раз смотрели канал за указанный период. Средний вес рассчитывается путем суммирования весов респондентов за период и деления этой суммы на длительность периода (кол-ве дней в периоде).
+  
+- Среднее время просмотра канала. Отношение суммы произведений длительности просмотра канала и веса респондента к сумме весов всех респондентов.
+
+Эти показатели можно посчитать, как по всем респондентам, так и для определенных соцдем групп. Для этого необходимо будет учесть размер населения (сумму весов) в этих соцдем группах.
+
+Помимо классических показателей также можно проанализировать интервалы несмотрения ТВ. Проанализировать данные на предмет похожести распределения дырок между сеансами смотрения.
+В принциве приветствуется любое проявление творчества в анализе. Необязательно ограничиваться только основными показателями для сравнени этих 2х выборок.
+Визуализации очень приветствуются.
+
+В данных выгружены следующие атрибуты:
+
+- date - дата измерения;
+- id - идентификатор респондента;
+- Population - вес, полученный после процедуры взвешивания;
+- age - возраст;
+- educ - образование;
+- famSize - размер семьи;
+- occupation - профессия;
+- sex - пол;
+- work - занятость;
+- ageGroup - возрастная группа;
+- tvStartTime - начала просмотра канала;
+- tvEndTime - конец просмотра канала;
+- duration - длительность сессии просмотра;
+- productid - id канала;
+- channel - расшифровка канала.
+
+Формат выходных данных: R скрипт с комментариями по ходу выполнения анализа или RMarkdown файл, который будет на выходе выдавать отчет c описанием хода анализа (можно и html результат прикрепить). 
+
+## Данные
+
+### Ознакомление с данными
 
 Подключаем необходимые библиотеки:
 ```{r, message=FALSE}
@@ -17,8 +63,6 @@ library(GGally)
 library(arrow)
 ```
 
-# Данные
-## Ознакомление с данными
 Читаем данные:
 ```{r}
 data1 <- read_parquet("source1.pq")
@@ -65,7 +109,8 @@ print(paste("data2$ageGroup, count of NA:", nrow(data2[data2$ageGroup == "NA",])
 То есть в data1 все же есть пропуски в соцдем признаке occupation. 
 Исправим это в слудующем разделе.
 
-## Объединение даннных
+### Объединение даннных
+
 Проверим одинаковые ли имена у признаков:
 ```{r}
 colnames(data1) == colnames(data2)
@@ -101,8 +146,8 @@ data2[data2$occupation == "служащие", 7] <- "military"
 ```
 
 ```{r}
-data2[data2$sex == "Женщины", 8] <- "male"
-data2[data2$sex == "Мужчины", 8] <- "female"
+data2[data2$sex == "Женщины", 8] <- "female"
+data2[data2$sex == "Мужчины", 8] <- "male"
 ```
 
 ```{r}
@@ -133,7 +178,8 @@ data$source <- as.factor(data$source)
 levels(data$occupation)[levels(data$occupation) == "NA"] <- NA
 ```
 
-# Предварительный анализ
+## Предварительный анализ
+
 Проверим наличие выбросов в данных. Только age и duration являются numeric,
 поэтому проверим их.
 ```{r}
@@ -162,10 +208,12 @@ ggplot(data, aes(x=source, y=duration)) +
 
 Теперь все выглядит более приятно.
 
-# Анализ
-Данные боагтые, сконцентрируемся на сравнении source1 и source2 в связи с ageGroup или age.
+## Анализ
 
-## Сравнение распределений duration в течении всей недели
+Данные богатые, сконцентрируемся на сравнении source1 и source2 в связи с ageGroup или age.
+
+### Сравнение распределений duration в течении всей недели
+
 Изобразим распределения с помощью boxplot-ов для того, чтобы сравнить квартили 
 и размахи распределений:
 ```{r}
@@ -198,7 +246,8 @@ for(i in unique(data$ageGroup)) {
 С уровнем значимости 0.05 отвергаются все гипотезы о равенстве дисперсий между 
 source1 и source2.
 
-## Охват продуктов каналов в течении всей недели
+### Охват продуктов каналов в течении всей недели
+
 Рассмотрим топ 3 продукта для каждой возрастной группы.
 ```{r, message=FALSE}
 products <- data %>% distinct(productid, .keep_all=TRUE) %>% 
@@ -215,9 +264,9 @@ reach.ageGroup <- merge(reach.ageGroup, products, by="productid")
 
 Изобразим результаты для наглядности:
 
-## {.tabset .unlisted .unnumbered}
+#### {.tabset .unlisted .unnumbered}
 
-### 12-17
+##### 12-17
 
 ```{r}
 reach.ageGroup[reach.ageGroup$ageGroup == "12-17",] %>%
@@ -227,7 +276,7 @@ reach.ageGroup[reach.ageGroup$ageGroup == "12-17",] %>%
 reach.ageGroup[reach.ageGroup$ageGroup == "12-17",] %>% arrange(source)
 ```
 
-### 18-24
+##### 18-24
 
 ```{r}
 reach.ageGroup[reach.ageGroup$ageGroup == "18-24",] %>%
@@ -237,7 +286,7 @@ reach.ageGroup[reach.ageGroup$ageGroup == "18-24",] %>%
 reach.ageGroup[reach.ageGroup$ageGroup == "18-24",] %>% arrange(source)
 ```
 
-### 25-34
+##### 25-34
 
 ```{r}
 reach.ageGroup[reach.ageGroup$ageGroup == "25-34",] %>%
@@ -247,7 +296,7 @@ reach.ageGroup[reach.ageGroup$ageGroup == "25-34",] %>%
 reach.ageGroup[reach.ageGroup$ageGroup == "25-34",] %>% arrange(source)
 ```
 
-### 35-44
+##### 35-44
 
 ```{r}
 reach.ageGroup[reach.ageGroup$ageGroup == "35-44",] %>%
@@ -257,7 +306,7 @@ reach.ageGroup[reach.ageGroup$ageGroup == "35-44",] %>%
 reach.ageGroup[reach.ageGroup$ageGroup == "35-44",] %>% arrange(source)
 ```
 
-### 45-54
+##### 45-54
 
 ```{r}
 reach.ageGroup[reach.ageGroup$ageGroup == "45-54",] %>%
@@ -267,7 +316,7 @@ reach.ageGroup[reach.ageGroup$ageGroup == "45-54",] %>%
 reach.ageGroup[reach.ageGroup$ageGroup == "45-54",] %>% arrange(source)
 ```
 
-### 55-64
+##### 55-64
 
 ```{r}
 reach.ageGroup[reach.ageGroup$ageGroup == "55-64",] %>%
@@ -277,7 +326,7 @@ reach.ageGroup[reach.ageGroup$ageGroup == "55-64",] %>%
 reach.ageGroup[reach.ageGroup$ageGroup == "55-64",] %>% arrange(source)
 ```
 
-### 65+
+##### 65+
 
 ```{r}
 reach.ageGroup[reach.ageGroup$ageGroup == "65+",] %>%
@@ -287,14 +336,14 @@ reach.ageGroup[reach.ageGroup$ageGroup == "65+",] %>%
 reach.ageGroup[reach.ageGroup$ageGroup == "65+",] %>% arrange(source)
 ```
 
-## {.unlisted .unnumbered}
+#### {.unlisted .unnumbered}
 
 Для каждой возрастной группы Россия 1 является общим продуктом. Для людей 
 страрше 55 лет НТВ так же общий топ продукт в данной катигории. Еще можно 
 заметить, что топ продукты по охвату одинаковые для возрастных групп 55-64 и 
 65+ внутри каждого ресурса данных.
 
-## Среднее время просмотра канала
+### Среднее время просмотра канала
 
 Рассмотрим топ 3 продукта для каждой возрастной группы.
 ```{r, message=FALSE}
@@ -307,9 +356,9 @@ avgDuration.ageGroup <- data %>%
 avgDuration.ageGroup <- merge(avgDuration.ageGroup, products, by="productid")
 ```
 
-## {.tabset .unlisted .unnumbered}
+#### {.tabset .unlisted .unnumbered}
 
-### 12-17
+##### 12-17
 
 ```{r}
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "12-17",] %>%
@@ -319,7 +368,7 @@ avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "12-17",] %>%
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "12-17",] %>% arrange(source)
 ```
 
-### 18-24
+##### 18-24
 
 ```{r}
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "18-24",] %>%
@@ -329,7 +378,7 @@ avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "18-24",] %>%
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "18-24",] %>% arrange(source)
 ```
 
-### 25-34
+##### 25-34
 
 ```{r}
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "25-34",] %>%
@@ -339,7 +388,7 @@ avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "25-34",] %>%
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "25-34",] %>% arrange(source)
 ```
 
-### 35-44
+##### 35-44
 
 ```{r}
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "35-44",] %>%
@@ -349,7 +398,7 @@ avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "35-44",] %>%
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "35-44",] %>% arrange(source)
 ```
 
-### 45-54
+##### 45-54
 
 ```{r}
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "45-54",] %>%
@@ -359,7 +408,7 @@ avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "45-54",] %>%
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "45-54",] %>% arrange(source)
 ```
 
-### 55-64
+##### 55-64
 
 ```{r}
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "55-64",] %>%
@@ -369,7 +418,7 @@ avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "55-64",] %>%
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "55-64",] %>% arrange(source)
 ```
 
-### 65+
+##### 65+
 
 ```{r}
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "65+",] %>%
@@ -379,11 +428,12 @@ avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "65+",] %>%
 avgDuration.ageGroup[avgDuration.ageGroup$ageGroup == "65+",] %>% arrange(source)
 ```
 
-## {.unlisted .unnumbered}
+#### {.unlisted .unnumbered}
 
 Единственный общий продукт для людей от 65 лет является ДОМ КИНО, больше пересечений нет в топ 3.
 
-## Корреляция возраста и длительности просмтра ТВ
+### Корреляция возраста и длительности просмтра ТВ
+
 Проверим как коррелируют age и время, которое человек смотрел ТВ в течении недели, 
 сгруппировав выборку по людям.
 ```{r, message=FALSE}
@@ -414,12 +464,12 @@ print(paste("correlation for source 2:",
                 filter(totalDuration.age, source == 2)$totalDuration)))
 ```
 
-Посчитаем частную корреляцию возраста и временем просмотра ТВ за всю неделю за 
+Посчитаем частную корреляцию возраста и время просмотра ТВ за всю неделю за 
 вычетом значений других факторов (образования, размера семьи, профессии, пола) для 
 обоих ресурсов (занятость не учитываем, так как пенсионеры и дети не работают, поэтому
 она будет сильно коррелировать с возрастом).
 
-Для этого прийдется трансформировать факторы в dummy variable, так как у них могут быть
+Для этого придется трансформировать факторы в dummy variables, так как у них могут быть
 нелинейные связи с интересующими нас двумя признаками:
 ```{r, message=FALSE}
 library(fastDummies)
@@ -428,6 +478,8 @@ data.dummy <- totalDuration.age %>%
   filter(occupation != "NA") %>%
   dummy_cols(select_columns=c("educ", "famSize", "occupation", "sex")) %>%
   dplyr::select(-id, -educ, -famSize, -occupation, -sex, -work)
+
+colnames(data.dummy)
 ```
 
 ```{r, message=FALSE, warning=FALSE}
@@ -440,7 +492,8 @@ pcor(x=filter(data.dummy, source == 2) %>% dplyr::select(-source), method="pears
 Частная корреляция меньше обычной, но эффект положительной взаимосвязи остался для
 обоих ресурсов.
 
-## Распределения весов
+### Распределения весов
+
 Напоследок интересно узнать одинаковые ли распределения имеют веса в обоих ресурсах 
 для разных возрастных групп. Для этого сгрупперуем выборку по людям, посчитав для каждого 
 человека его средний вес (вес для одного и того же челвоека меняется в зависимости от дня):
@@ -454,9 +507,9 @@ Population <- data %>%
 
 Визуализируем распределния и используем парный критерий Колмогорова-Смирнова:
 
-## {.tabset .unlisted .unnumbered}
+#### {.tabset .unlisted .unnumbered}
 
-### 12-17
+##### 12-17
 
 ```{r, warning=FALSE, message=FALSE}
 Population[Population$ageGroup == "12-17",] %>%
@@ -467,7 +520,7 @@ ks.test((Population %>% filter(ageGroup == "12-17", source == 1))$Population,
         (Population %>% filter(ageGroup == "12-17", source == 2))$Population)$p.value
 ```
 
-### 18-24
+##### 18-24
 
 ```{r, warning=FALSE, message=FALSE}
 Population[Population$ageGroup == "18-24",] %>%
@@ -478,7 +531,7 @@ ks.test((Population %>% filter(ageGroup == "18-24", source == 1))$Population,
         (Population %>% filter(ageGroup == "18-24", source == 2))$Population)$p.value
 ```
 
-### 25-34
+##### 25-34
 
 ```{r, warning=FALSE, message=FALSE}
 Population[Population$ageGroup == "25-34",] %>%
@@ -489,7 +542,7 @@ ks.test((Population %>% filter(ageGroup == "25-34", source == 1))$Population,
         (Population %>% filter(ageGroup == "25-34", source == 2))$Population)$p.value
 ```
 
-### 35-44
+##### 35-44
 
 ```{r, warning=FALSE, message=FALSE}
 Population[Population$ageGroup == "35-44",] %>%
@@ -500,7 +553,7 @@ ks.test((Population %>% filter(ageGroup == "35-44", source == 1))$Population,
         (Population %>% filter(ageGroup == "35-44", source == 2))$Population)$p.value
 ```
 
-### 45-54
+##### 45-54
 
 ```{r, warning=FALSE, message=FALSE}
 Population[Population$ageGroup == "45-54",] %>%
@@ -511,7 +564,7 @@ ks.test((Population %>% filter(ageGroup == "45-54", source == 1))$Population,
         (Population %>% filter(ageGroup == "45-54", source == 2))$Population)$p.value
 ```
 
-### 55-64
+##### 55-64
 
 ```{r, warning=FALSE, message=FALSE}
 Population[Population$ageGroup == "55-64",] %>%
@@ -522,7 +575,7 @@ ks.test((Population %>% filter(ageGroup == "55-64", source == 1))$Population,
         (Population %>% filter(ageGroup == "55-64", source == 2))$Population)$p.value
 ```
 
-### 65+
+##### 65+
 
 ```{r, warning=FALSE, message=FALSE}
 Population[Population$ageGroup == "65+",] %>%
@@ -533,7 +586,7 @@ ks.test((Population %>% filter(ageGroup == "65+", source == 1))$Population,
         (Population %>% filter(ageGroup == "65+", source == 2))$Population)$p.value
 ```
 
-## {.unlisted .unnumbered}
+#### {.unlisted .unnumbered}
 
 Распределения весов в двух ресурсах для каждой возрастной группы различные.
 Используемый критерий имеет довольно общую альтернативную гипотезу, поэтому у него 

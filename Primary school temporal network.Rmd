@@ -112,7 +112,73 @@ print(paste("Shapiro.Wilk", shapiro.test(data.v$degree)$p))
 
 Критерий Лилифорса с уровнем значимости 0.5 не отверг гипотезу о нормальности, остальные отвергли.
 
+Найдем топ 10 центральныйх вершин, основываясь на степенях. Я предпологаю, что самыми социальными являются учителя. 
+```{r}
+count.of.teachers <- data.v %>% filter(class == "Teachers") %>% nrow()
+(data.v %>% arrange(-degree))[1:count.of.teachers,]
+```
 
+Нет, оказалось, что это не так.
+
+### Плотность сети
+Вычислим плотность сети:
+```{r}
+edge_density(network)
+```
+
+Вычилим плотности подсетей для кажого класса, они должны быть больше:
+```{r}
+class <- unique(V(network)$class)
+
+for(i in class) {
+  subgraph <- induced_subgraph(network, V(network)[class == i])
+  print(paste("density of", i, ":", edge_density(subgraph)))
+}
+```
+
+Так и выходит, логично, что дети внутри класса контактируют друг с другом больше.
+
+Изобразим матрицу сопряженности для всей сети, чем темнее точка тем выше степень взаимодействия двух участников эксперемента:
+```{r, message=FALSE, warning=FALSE}
+data.e <- as_long_data_frame(network) %>% 
+  mutate(from = as.character(from), to = as.character(to))
+
+tmp <- data.frame(to = data.e$from, from = data.e$to, Freq = data.e$Freq, 
+                 to_class = data.e$from_class, from_class = data.e$to_class)
+
+tmp <- rbind(data.e %>% select(from, to, Freq, to_class, from_class), tmp)
+
+tmp %>%
+  ggplot(aes(from, to)) +
+  geom_raster(aes(fill=Freq)) +
+  scale_fill_gradient2(low="gray100", mid="gray50", high="gray0") +
+  theme(legend.position="none") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.background = element_blank())
+```
+
+Матрица сопряженности демонстрирует плотнсоть сети, отстутсвие точки означает, что два индивида не взаимодействовали. Изобразим матрицу сопряженности для одного класса, например, 4B:
+```{r}
+tmp %>% filter(from_class == "4B", to_class == "4B") %>%
+  ggplot(aes(from, to)) +
+  geom_raster(aes(fill=Freq)) +
+  scale_fill_gradient2(low="gray100", mid="gray50", high="gray0") +
+  theme(legend.position="none") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.background = element_blank())
+```
+
+Можно видеть, что матрица сопряженности намного плотнее
 
 ### Другое
 
@@ -136,22 +202,7 @@ top.10.degree; top.10.betweenness
 sum(top.10.degree %in% top.10.betweenness)
 ```
 
-Вычислим плотность графа:
-```{r}
-edge_density(network)
-```
 
-Вычилим плотности подграфов внутри кажого класса, они должна быть больше:
-```{r}
-class <- unique(V(network)$class)[unique(V(network)$class) != "Teachers"]
-
-for(i in class) {
-  subgraph <- induced_subgraph(network, V(network)[class == i])
-  print(paste("density of", i, ":", edge_density(subgraph)))
-}
-```
-
-Так и выходит, логично, что дети внутри класса контактируют друг с другом больше.
 
 Нарисуем граф:
 ```{r}
