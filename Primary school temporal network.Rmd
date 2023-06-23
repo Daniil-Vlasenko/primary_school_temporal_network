@@ -1,6 +1,6 @@
 ---
 title: "Primary school temporal network"
-author: "Vlasenko Daniil"
+author: "Власенко Даниил"
 date: "2023-06-19"
 output: 
   html_document:
@@ -10,11 +10,11 @@ output:
 
 ## Данные 
 
-Данные взяты c [этого сайта](http://www.sociopatterns.org/datasets/primary-school-temporal-network-data). Данные описывают взаимодействия учеников и учителей начальной школы в течении недели. У каждого участника эксперемента при себе было устройство, которое фиксировало каждые 20 секунд, с кем он сейчас контактирует.
+Данные взяты c [этого сайта](http://www.sociopatterns.org/datasets/primary-school-temporal-network-data). Данные описывают взаимодействия учеников и учителей начальной школы в течении недели. У каждого участника эксперимента при себе было устройство, которое фиксировало каждые 20 секунд, с кем он сейчас контактирует.
 
-Через анализ этих данных я хочу изучить на практике теорию, изложенную в книги [Network science](http://networksciencebook.com/) и познакомиться с вариантом библиотеки igraph для языка R.
+Через анализ этих данных я хочу изучить на практике теорию, изложенную в книги [Network science](http://networksciencebook.com/), и познакомиться с вариантом библиотеки igraph для языка R.
 
-Подключаем необходимые билиотеки:
+Подключаем необходимые библиотеки:
 ```{r, message=FALSE}
 library(dplyr)
 library(igraph)
@@ -30,9 +30,9 @@ data2 <- read.csv("metadata_primaryschool.txt", sep="\t", header=FALSE)
 colnames(data2) <- c("i", "class", "sex")
 ```
 
-data1 содержит информацию о том, когда (time) кто с кем (i, j) контактировал и из какого они класса или являются ли учителем (Ci, Cj). data2 содержит дополнительную информаицю о поле учеников. 
+data1 содержит информацию о том, когда (time) кто с кем (i, j) контактировал и из какого они класса или являются ли учителем (Ci, Cj). data2 содержит дополнительную информацию о поле учеников. 
 
-Хотим работать с взыешенным графом, поэтому посчитаем для каждой пары индивидов (ученик или учитель) число контактов (Freq) и затем удалим из данных пары индивидов, которые не контактировали друг с другом.
+Хотим работать с взвешенным графом, поэтому посчитаем для каждой пары индивидов (ученик или учитель) число контактов (Freq) и затем удалим из данных пары индивидов, которые не контактировали друг с другом.
 ```{r}
 edges <- data.frame(table(data1 %>% dplyr::select(i, j))) %>%
   filter(Freq > 0)
@@ -42,32 +42,6 @@ edges <- data.frame(table(data1 %>% dplyr::select(i, j))) %>%
 ```{r}
 network <- graph_from_data_frame(edges, directed=FALSE, vertices=data2)
 ```
-
-## Визуализация
-
-Визуализируем сеть:
-```{r}
-set.seed(1)
-pal<-brewer.pal(length(unique(V(network)$class)), "Set3")
-
-plot(network, edge.color='black', vertex.label.cex=0.00001,
-     vertex.color=pal[as.numeric(as.factor(vertex_attr(network, "class")))],
-     vertex.size=sqrt(V(network)$degree)/2.5, edge.width=sqrt(E(network)$Freq/3000),
-     layout=layout.fruchterman.reingold)
-```
-
-Добавим к визуализации кластеризацию основанную на методе Лувена:
-```{r}
-lc <- cluster_louvain(network) 
-#2. Plotting the Betweenness Centrality network with the community detection
-
-set.seed(1001) # To duplicate the computer process and create exactly the same network repetitively you should set the seed.
-plot(lc, network, edge.color = 'black', vertex.label.cex=0.00001,
-     vertex.color=pal[as.numeric(as.factor(vertex_attr(network, "class")))],
-     vertex.size=sqrt(V(network)$degree)/2.5, edge.width=sqrt(E(network)$Freq/3000),
-     layout=layout.fruchterman.reingold)
-```
-
 
 ## Анализ 
 
@@ -239,6 +213,29 @@ data.v$transitivity <- V(network)$transitivity
 
 Это ученики с небольшими степенями.
 
+## Визуализация
+
+Визуализируем сеть:
+```{r}
+set.seed(1)
+pal<-brewer.pal(length(unique(V(network)$class)), "Set3")
+
+plot(network, edge.color='black', vertex.label.cex=0.00001,
+     vertex.color=pal[as.numeric(as.factor(vertex_attr(network, "class")))],
+     vertex.size=sqrt(V(network)$degree)/2.5, edge.width=sqrt(E(network)$Freq/3000),
+     layout=layout.fruchterman.reingold)
+```
+
+Добавим к визуализации кластеризацию основанную на методе Лувена:
+```{r}
+set.seed(1001) 
+lc <- cluster_louvain(network) 
+
+plot(lc, network, edge.color = 'black', vertex.label.cex=0.00001,
+     vertex.color=pal[as.numeric(as.factor(vertex_attr(network, "class")))],
+     vertex.size=sqrt(V(network)$degree)/2.5, edge.width=sqrt(E(network)$Freq/3000),
+     layout=layout.fruchterman.reingold)
+```
 
 
 
