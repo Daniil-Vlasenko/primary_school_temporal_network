@@ -211,25 +211,34 @@ data.v$transitivity <- V(network)$transitivity
 Это ученики с небольшими степенями.
 
 ### Корреляция степеней вершин
-
+Изобразим матрицу корреляций степеней вершин, ячейка (i, j) которой демонстрирует вероятность
+связи вершин со степенями i и j:
 ```{r}
 library(reshape)
 
-data.e %>% 
+data.cor <- data.e %>% 
   dplyr::select(from_degree, to_degree) %>% 
   table() %>% 
   data.frame() %>%
   mutate(Freq = Freq / sum(Freq)) %>%
-  dplyr::rename(probability = Freq) %>%
+  dplyr::rename(probability = Freq)
+
+data.cor %>%
   ggplot(aes(from_degree, to_degree)) +
     geom_raster(aes(fill = probability)) +
     scale_fill_gradient2(low="gray100", mid="gray50", high="gray0") +
     scale_x_discrete(breaks=seq(20, 134, 5)) +
     scale_y_discrete(breaks=seq(20, 134, 5))
-
-
-    
 ```
+
+
+
+```{r}
+data.cor %>%
+  ggplot(aes(x=as.numeric(from_degree), y=as.numeric(to_degree), size=probability)) +
+  geom_point()
+```
+
 
 
 ## Визуализация
