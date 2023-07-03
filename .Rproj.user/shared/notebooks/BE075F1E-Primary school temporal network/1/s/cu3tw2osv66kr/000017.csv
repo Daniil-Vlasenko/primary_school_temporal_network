@@ -1,0 +1,2 @@
+"0","# cor(data.prob$from_degree, data.prob$to_degree, method=""pearson"")"
+"0","# cor(data.prob$from_degree, data.prob$to_degree, method=""spearman"")"
