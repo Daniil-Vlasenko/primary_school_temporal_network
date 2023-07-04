@@ -274,7 +274,8 @@ for(i in V(network)[V(network)$class == "Teachers"]) {
 класс не имеет смысла, так как получится почти полный граф. Посмотрим как 
 выглядят связи для топ 50 учеников с наименьщими степенями свободы.
 ```{r}
-plot(subgraph(network, (vertices %>% filter(class != "Teachers") %>% arrange(degree))[1:50,]$name),
+igraph_options(vertex.size=5, vertex.label.cex=0.5, vertex.label.dist=1.5, vertex.label.degree=3*pi/2)
+plot(subgraph(network, (vertices %>% filter(class != "Teachers") %>% arrange(degree))[1:30,]$name),
      layout=layout_in_circle)
 ```
 
