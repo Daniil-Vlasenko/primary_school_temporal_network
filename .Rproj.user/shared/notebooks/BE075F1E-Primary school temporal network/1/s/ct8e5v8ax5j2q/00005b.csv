@@ -1,0 +1,8 @@
+"0","igraph_options(vertex.size=8, "
+"0","               vertex.label.cex=0.5, "
+"0","               vertex.label.dist=1.5, "
+"0","               vertex.label.degree=3*pi/2,"
+"0","               edge.width=1)"
+"0","subnetwork <- subgraph(network, (vertices %>% filter(class != ""Teachers"") %>%"
+"0","                                   arrange(degree))[1:30,]$name)"
+"0","plot(subnetwork, layout=layout_in_circle)"

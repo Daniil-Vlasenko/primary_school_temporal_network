@@ -1,0 +1,7 @@
+"0","set.seed(1001) "
+"0","lc <- cluster_louvain(network) "
+"0",""
+"0","plot(lc, network, edge.color = 'black', vertex.label.cex=0.00001,"
+"0","     vertex.color=pal[as.numeric(as.factor(vertex_attr(network, ""class"")))],"
+"0","     vertex.size=sqrt(V(network)$degree)/2.5, edge.width=sqrt(E(network)$Freq/3000),"
+"0","     layout=layout_with_fr)"
