@@ -84,7 +84,10 @@ E(karate)[ F1 %--% F2 ]$color <- "yellow"
 V(karate)$label.dist <- 
   ifelse(V(karate)$size >= 9.0, 0, 1.0)
 # Plot decorated graph, using same layout.
+png(file="saving_plot2.png",
+    width=600, height=350)
 plot(karate, layout=l)
+dev.off()
 
 # CHUNK 9
 library(sand)
@@ -101,6 +104,7 @@ v.label <- V(lazega)$Seniority
 # Reproducible layout.
 set.seed(42)
 l <- layout_with_fr(lazega)
+
 plot(lazega, layout=l, vertex.color=v.colors,
      vertex.shape=v.shapes, vertex.size=v.size,
      vertex.label=v.label)
