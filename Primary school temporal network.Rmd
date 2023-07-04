@@ -354,6 +354,29 @@ plot(network,
 На этом графике хорошо заметно как учителя занимаются с одним или двумя классами,
 не более.
 
+```{r}
+set.seed(1)
+
+classes <- as.factor(V(network)$class)
+network.c <- contract(network, classes)
+E(network.c)$weight <- 1
+network.c <- simplify(network.c)
+
+class.size <- as.vector(table(V(network)$class))
+plot(network.c, 
+     vertex.size=5*sqrt(class.size),
+     vertex.label=classes)
+
+
+classes
+
+V(network)$class
+table(V(network)$class)
+as.vector(table(V(network)$class))
+class.size
+
+```
+
 
 
 
