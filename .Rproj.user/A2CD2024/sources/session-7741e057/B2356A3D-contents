@@ -272,9 +272,13 @@ for(i in V(network)[V(network)$class == "Teachers"]) {
 Начнем с круговой визуализации. Так как в сети много вершин, то визуализация всех данных
 через круг приведет к тому, что на ней будет ничего не видно. Но визуализировать отдельный 
 класс не имеет смысла, так как получится почти полный граф. Посмотрим как 
-выглядят связи для топ 50 учеников с наименьщими степенями свободы.
+выглядят связи для топ 30 учеников с наименьщими степенями свободы.
 ```{r}
-igraph_options(vertex.size=5, vertex.label.cex=0.5, vertex.label.dist=1.5, vertex.label.degree=3*pi/2)
+igraph_options(vertex.size=8, 
+               vertex.label.cex=0.5, 
+               vertex.label.dist=1.5, 
+               vertex.label.degree=3*pi/2,
+               edge.width=1)
 plot(subgraph(network, (vertices %>% filter(class != "Teachers") %>% arrange(degree))[1:30,]$name),
      layout=layout_in_circle)
 ```
