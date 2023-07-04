@@ -1,4 +1,4 @@
-"0","for(i in V(network)[V(network)$class == ""Teachers""]) {"
+"0","for(i in V(network)[class == ""Teachers""]) {"
 "0","  print(paste0(""neighbors of the teacher with id "", i, "":""))"
 "0","  print(table(neighbors(network, i)$class))"
 "0","}"

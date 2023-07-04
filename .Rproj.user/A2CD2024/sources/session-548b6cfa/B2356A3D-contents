@@ -257,7 +257,7 @@ tmp %>%
 мы наблюдать ту же картину в западной школе. Посчитаем соседей для каждого учителя
 в каждом классе:
 ```{r}
-for(i in V(network)[V(network)$class == "Teachers"]) {
+for(i in V(network)[class == "Teachers"]) {
   print(paste0("neighbors of the teacher with id ", i, ":"))
   print(table(neighbors(network, i)$class))
 }
@@ -317,8 +317,83 @@ plot(subnetwork, layout=layout_with_fr)
 plot(subnetwork, layout=layout_with_sugiyama)
 ```
 
-В общем, в igraph есть много разных методов отрисовки графов, не буду все тестировать. 
+В общем, в igraph есть много разных методов отрисовки графов, не будем все тестировать. 
+
+
+```{r}
+library(igraphdata)
+data(karate)
+# Reproducible layout
+set.seed(42)
+l <- layout_with_kk(karate)
+# Plot undecorated first.
+igraph_options(vertex.size=10)
+par(mfrow=c(1,1))
+plot(karate, layout=l, vertex.label=V(karate), 
+     vertex.color=NA)
+# Now decorate, starting with labels.
+V(karate)$label <- sub("Actor ", "", V(karate)$name)
+# Two leaders get shapes different from club members.
+V(karate)$shape <- "circle"
+V(karate)[c("Mr Hi", "John A")]$shape <- "rectangle"
+# Differentiate two factions by color.
+V(karate)[Faction == 1]$color <- "red"
+V(karate)[Faction == 2]$color <- "dodgerblue"
+# Vertex area proportional to vertex strength
+# (i.e., total weight of incident edges).
+V(karate)$size <- 4*sqrt(strength(karate))
+V(karate)$size2 <- V(karate)$size * .5
+# Weight edges by number of common activities
+E(karate)$width <- E(karate)$weight
+# Color edges by within/between faction.
+F1 <- V(karate)[Faction==1]
+F2 <- V(karate)[Faction==2]
+E(karate)[ F1 %--% F1 ]$color <- "pink"
+E(karate)[ F2 %--% F2 ]$color <- "lightblue"
+E(karate)[ F1 %--% F2 ]$color <- "yellow"
+# Offset vertex labels for smaller points (default=0).
+V(karate)$label.dist <- 
+  ifelse(V(karate)$size >= 9.0, 0, 1.0)
+# Plot decorated graph, using same layout.
+png(file="saving_plot2.png",
+    width=600, height=350)
+plot(karate, layout=l)
+dev.off()
+
+E(karate)[ F1 %--% F1 ]
+```
+
 Перейдем к визуализации всей сети, каждый класс будем окрашивать в свой цвет:
+
+```{r}
+V(network)$label <- V(network)$name
+
+V(network)$shape <- "circle"
+V(network)[class=="Teachers"]$shape <- "rectangle"
+
+unique(V(network)$class)
+
+V(network)[class == "Teachers"]$color <- "white"
+V(network)[class == "5B"]$color <- "antiquewhite2"
+V(network)[class == "5A"]$color <- "aquamarine2"
+V(network)[class == "4A"]$color <- "blueviolet"
+V(network)[class == "3B"]$color <- "coral3"
+V(network)[class == "4B"]$color <- "cadetblue1"
+V(network)[class == "2A"]$color <- "chartreuse3"
+V(network)[class == "1B"]$color <- "chocolate2"
+V(network)[class == "2B"]$color <- "darkgoldenrod3"
+V(network)[class == "1A"]$color <- "darkgrey"
+V(network)[class == "3A"]$color <- "deeppink3"
+
+set.seed(1)
+plot(network, 
+     vertex.size=sqrt(V(network)$degree)/2.5, 
+     edge.width=sqrt(E(network)$Freq/3000),
+     vertex.label.cex=0.00001,
+     layout=layout_with_fr)
+```
+
+
 ```{r}
 library(RColorBrewer)
 
@@ -346,4 +421,7 @@ plot(lc, network, edge.color = 'black', vertex.label.cex=0.00001,
 
 
 
+```{r}
+
+```
 

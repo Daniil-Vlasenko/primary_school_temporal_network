@@ -1,0 +1,4 @@
+"0","V(network)[V(network)$sex == ""Unknown""]$sex <- NA
+"
+"2","Error in simple_vs_index(x, ii, na_ok) : Unknown vertex selected
+"
