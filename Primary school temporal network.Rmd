@@ -319,61 +319,17 @@ plot(subnetwork, layout=layout_with_sugiyama)
 
 В общем, в igraph есть много разных методов отрисовки графов, не будем все тестировать. 
 
-
-```{r}
-library(igraphdata)
-data(karate)
-# Reproducible layout
-set.seed(42)
-l <- layout_with_kk(karate)
-# Plot undecorated first.
-igraph_options(vertex.size=10)
-par(mfrow=c(1,1))
-plot(karate, layout=l, vertex.label=V(karate), 
-     vertex.color=NA)
-# Now decorate, starting with labels.
-V(karate)$label <- sub("Actor ", "", V(karate)$name)
-# Two leaders get shapes different from club members.
-V(karate)$shape <- "circle"
-V(karate)[c("Mr Hi", "John A")]$shape <- "rectangle"
-# Differentiate two factions by color.
-V(karate)[Faction == 1]$color <- "red"
-V(karate)[Faction == 2]$color <- "dodgerblue"
-# Vertex area proportional to vertex strength
-# (i.e., total weight of incident edges).
-V(karate)$size <- 4*sqrt(strength(karate))
-V(karate)$size2 <- V(karate)$size * .5
-# Weight edges by number of common activities
-E(karate)$width <- E(karate)$weight
-# Color edges by within/between faction.
-F1 <- V(karate)[Faction==1]
-F2 <- V(karate)[Faction==2]
-E(karate)[ F1 %--% F1 ]$color <- "pink"
-E(karate)[ F2 %--% F2 ]$color <- "lightblue"
-E(karate)[ F1 %--% F2 ]$color <- "yellow"
-# Offset vertex labels for smaller points (default=0).
-V(karate)$label.dist <- 
-  ifelse(V(karate)$size >= 9.0, 0, 1.0)
-# Plot decorated graph, using same layout.
-png(file="saving_plot2.png",
-    width=600, height=350)
-plot(karate, layout=l)
-dev.off()
-
-E(karate)[ F1 %--% F1 ]
-```
-
-Перейдем к визуализации всей сети, каждый класс будем окрашивать в свой цвет:
-
+Перейдем к визуализации всей сети, только теперь будет декорировать граф,
+используя возможности библиотеки igraph. Каждый класс будем окрашивать в свой цвет.
+Вершины учеников изобразим как круги, а вершины учителей - как квадраты. Размер
+вершины будет пропорционален ее степени. Ширина ребра пропорционально ее весу.
 ```{r}
 V(network)$label <- V(network)$name
 
 V(network)$shape <- "circle"
-V(network)[class=="Teachers"]$shape <- "rectangle"
+V(network)[class=="Teachers"]$shape <- "square"
 
-unique(V(network)$class)
-
-V(network)[class == "Teachers"]$color <- "white"
+V(network)[class == "Teachers"]$color <- "black"
 V(network)[class == "5B"]$color <- "antiquewhite2"
 V(network)[class == "5A"]$color <- "aquamarine2"
 V(network)[class == "4A"]$color <- "blueviolet"
@@ -385,43 +341,23 @@ V(network)[class == "2B"]$color <- "darkgoldenrod3"
 V(network)[class == "1A"]$color <- "darkgrey"
 V(network)[class == "3A"]$color <- "deeppink3"
 
+E(network)$color <- "black"
+
 set.seed(1)
 plot(network, 
-     vertex.size=sqrt(V(network)$degree)/2.5, 
+     vertex.size=sqrt(V(network)$degree)/2, 
      edge.width=sqrt(E(network)$Freq/3000),
-     vertex.label.cex=0.00001,
+     vertex.label=NA,
      layout=layout_with_fr)
 ```
 
-
-```{r}
-library(RColorBrewer)
-
-set.seed(1)
-pal<-brewer.pal(length(unique(V(network)$class)), "Set3")
-
-plot(network, edge.color='black', vertex.label.cex=0.00001,
-     vertex.color=pal[as.numeric(as.factor(vertex_attr(network, "class")))],
-     vertex.size=sqrt(V(network)$degree)/2.5, edge.width=sqrt(E(network)$Freq/3000),
-     layout=layout_with_fr)
-```
-
-Здесь каждый класс имеет свой цвет.
-
-Добавим к визуализации кластеризацию, основанную на методе Лувена:
-```{r}
-set.seed(1001) 
-lc <- cluster_louvain(network) 
-
-plot(lc, network, edge.color = 'black', vertex.label.cex=0.00001,
-     vertex.color=pal[as.numeric(as.factor(vertex_attr(network, "class")))],
-     vertex.size=sqrt(V(network)$degree)/2.5, edge.width=sqrt(E(network)$Freq/3000),
-     layout=layout_with_fr)
-```
+На этом графике хорошо заметно как учителя занимаются с одним или двумя классами,
+не более.
 
 
 
-```{r}
 
-```
+
+
+
 
