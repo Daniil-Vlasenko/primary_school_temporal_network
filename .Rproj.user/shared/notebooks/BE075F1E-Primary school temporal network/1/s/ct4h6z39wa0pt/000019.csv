@@ -1,0 +1,2 @@
+"0","count.of.teachers <- vertices %>% filter(class == ""Teachers"") %>% nrow()"
+"0","(vertices %>% arrange(-degree))[1:count.of.teachers,]"

@@ -33,13 +33,13 @@ data1 содержит информацию о том, когда (time) кто 
 
 Хотим работать с взвешенным графом, поэтому посчитаем для каждой пары индивидов (ученик или учитель) число контактов (Freq) и затем удалим из данных пары индивидов, которые не контактировали друг с другом.
 ```{r}
-edges <- data.frame(table(data1 %>% dplyr::select(i, j))) %>%
+data1 <- data.frame(table(data1 %>% dplyr::select(i, j))) %>%
   filter(Freq > 0)
 ```
 
 Создадим взвешенный неориентированный граф:
 ```{r}
-network <- graph_from_data_frame(edges, directed=FALSE, vertices=data2)
+network <- graph_from_data_frame(data1, directed=FALSE, vertices=data2)
 ```
 
 ## Анализ 
@@ -57,7 +57,7 @@ V(network)$sex[V(network)$sex == "Unknown"] <- NA
 V(network)$sex[1:50]
 ```
 
-Также вершины графа несут информацию о классе ученика или о том, что эта вершина связана с учителем:
+Также вершины графа несут информацию о классе ученика или о том, что эта вершина есть учитель:
 ```{r}
 V(network)$class[1:50]
 ```
@@ -65,6 +65,13 @@ V(network)$class[1:50]
 У ребер в графе есть веса:
 ```{r}
 E(network)$Freq[1:50]
+```
+
+### Общие характеристики
+
+Проверим, является ли граф связным:
+```{r}
+is_connected(network)
 ```
 
 ### Распределение степеней вершин
@@ -88,11 +95,9 @@ print(paste("Max of sample:", max(V(network)$degree)))
 ```{r, message=FALSE}
 library(ggplot2)
 
-data.v <- data.frame(name=V(network)$name, 
-                     class=as.factor(V(network)$class),
-                     degree=V(network)$degree)
+vertices <- igraph::as_data_frame(network, what="vertices")
 
-data.v %>%
+vertices %>%
   ggplot(aes(x=degree)) +
   geom_histogram(aes(y=..density..))
 ```
@@ -101,18 +106,18 @@ data.v %>%
 ```{r}
 library(nortest)
 
-print(paste("Pearson", pearson.test(data.v$degree)$p))
-print(paste("Lilliefors", lillie.test(data.v$degree)$p))
-print(paste("Anderson.Darling", ad.test(data.v$degree)$p))
-print(paste("Shapiro.Wilk", shapiro.test(data.v$degree)$p))
+print(paste("Pearson", pearson.test(vertices$degree)$p))
+print(paste("Lilliefors", lillie.test(vertices$degree)$p))
+print(paste("Anderson.Darling", ad.test(vertices$degree)$p))
+print(paste("Shapiro.Wilk", shapiro.test(vertices$degree)$p))
 ```
 
 Критерий Лилифорса с уровнем значимости 0.5 не отверг гипотезу о нормальности, остальные отвергли.
 
 Найдем топ 10 центральныйх вершин, основываясь на степенях. Я предпологаю, что самыми социальными являются учителя. 
 ```{r}
-count.of.teachers <- data.v %>% filter(class == "Teachers") %>% nrow()
-(data.v %>% arrange(-degree))[1:count.of.teachers,]
+count.of.teachers <- vertices %>% filter(class == "Teachers") %>% nrow()
+(vertices %>% arrange(-degree))[1:count.of.teachers,]
 ```
 
 Нет, оказалось, что это не так. 
@@ -135,15 +140,15 @@ for(i in class) {
 
 Так и выходит, логично, что дети внутри класса контактируют друг с другом больше.
 
-Изобразим матрицу сопряженности для всей сети, чем темнее точка тем выше степень взаимодействия двух участников эксперемента:
+Изобразим матрицу сопряженности для всей сети, чем темнее точка тем выше степень взаимодействия двух участников эксперимента:
 ```{r, message=FALSE, warning=FALSE}
-data.e <- as_long_data_frame(network) %>% 
+edges <- as_long_data_frame(network) %>% 
   mutate(from = as.character(from), to = as.character(to))
 
-tmp <- data.frame(to = data.e$from, from = data.e$to, Freq = data.e$Freq, 
-                 to_class = data.e$from_class, from_class = data.e$to_class)
+tmp <- data.frame(to = edges$from, from = edges$to, Freq = edges$Freq, 
+                 to_class = edges$from_class, from_class = edges$to_class)
 
-tmp <- rbind(data.e %>% select(from, to, Freq, to_class, from_class), tmp)
+tmp <- rbind(edges %>% select(from, to, Freq, to_class, from_class), tmp)
 
 tmp %>%
   ggplot(aes(from, to)) +
@@ -177,7 +182,7 @@ tmp %>% filter(from_class == "4B", to_class == "4B") %>%
 
 Можно видеть, что матрица сопряженности намного плотнее для конкретного класса.
 
-### Кратчайший путь.
+### Длины путей.
 
 Посчитаем среднее расстояние между индивидами в сети.
 ```{r}
@@ -200,12 +205,12 @@ transitivity(network)
 ```{r}
 V(network)$transitivity <- transitivity(network, type="local")
 V(network)$transitivity[1:50]
-data.v$transitivity <- V(network)$transitivity
+vertices$transitivity <- V(network)$transitivity
 ```
 
 Првоерим топ 10 индивидов с наибольшим коэффициентом кластеризации:
 ```{r}
-(data.v %>% arrange(-transitivity))[1:10,]
+(vertices %>% arrange(-transitivity))[1:10,]
 ```
 
 Это ученики с небольшими степенями.
@@ -216,7 +221,7 @@ data.v$transitivity <- V(network)$transitivity
 ```{r, message=FALSE, warning=FALSE}
 library(reshape)
 
-data.prob <- data.e %>% 
+data.prob <- edges %>% 
   dplyr::select(from_degree, to_degree) %>% 
   table() %>% 
   data.frame() %>%
@@ -246,7 +251,7 @@ tmp %>%
 ```
 
 
-## Анализ соседей учителей
+### Анализ соседей учителей
 Зная, что в школах России у начальных классов есть по одному главному 
 учителю, который преподает почти все дисциплины, интересно проверить будем ли
 мы наблюдать ту же картину в западной школе. Посчитаем соседей для каждого учителя
@@ -261,6 +266,18 @@ for(i in V(network)[V(network)$class == "Teachers"]) {
 но также встречаются учителя, которые активно контактируют с учениками двух классов.
 
 ## Визуализация
+
+Протестируем разные способы визуализации сети. 
+
+Начнем с круговой визуализации. Так как в сети много вершин, то визуализация всех данных
+через круг приведет к тому, что на ней будет ничего не видно. Но визуализировать отдельный 
+класс не имеет смысла, так как получится почти полный граф. Посмотрим как 
+выглядят связи для топ 50 учеников с наименьщими степенями свободы.
+```{r}
+plot(subgraph(network, (vertices %>% filter(class != "Teachers") %>% arrange(degree))[1:50,]$name),
+     layout=layout_in_circle)
+```
+
 
 Визуализируем сеть:
 ```{r}

@@ -1,6 +1,6 @@
 "0","library(reshape)"
 "0",""
-"0","data.prob <- data.e %>% "
+"0","data.prob <- edges %>% "
 "0","  dplyr::select(from_degree, to_degree) %>% "
 "0","  table() %>% "
 "0","  data.frame() %>%"

@@ -1,1 +1,0 @@
-"0","(data.v %>% arrange(-transitivity))[1:10,]"

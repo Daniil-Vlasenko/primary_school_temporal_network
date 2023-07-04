@@ -1,2 +1,0 @@
-"0","count.of.teachers <- data.v %>% filter(class == ""Teachers"") %>% nrow()"
-"0","(data.v %>% arrange(-degree))[1:count.of.teachers,]"

@@ -1,0 +1,7 @@
+"0","library(ggplot2)"
+"0",""
+"0","vertices <- igraph::as_data_frame(network, what=""vertices"")"
+"0",""
+"0","vertices %>%"
+"0","  ggplot(aes(x=degree)) +"
+"0","  geom_histogram(aes(y=..density..))"
