@@ -355,28 +355,40 @@ plot(network,
 не более.
 
 ```{r}
-set.seed(1)
-
-classes <- as.factor(V(network)$class)
-network.c <- contract(network, classes)
-E(network.c)$weight <- 1
-network.c <- simplify(network.c)
-
-class.size <- as.vector(table(V(network)$class))
-plot(network.c, 
-     vertex.size=5*sqrt(class.size),
-     vertex.label=classes)
-
-
-classes
-
-V(network)$class
-table(V(network)$class)
-as.vector(table(V(network)$class))
-class.size
-
+network
 ```
 
+
+```{r}
+classes <- as.factor(V(network)$class)
+network.c <- contract(network, classes, 
+                      vertex.attr.comb=list(name="ignor",
+                                           class="first",
+                                           sex="ignor",
+                                           degree="sum",
+                                           transitivity="ignor",
+                                           label="ignor",
+                                           shape="first",
+                                           color="first"))
+V(network.c)$label <- V(network.c)$class
+network.c <- simplify(network.c,
+                      edge.attr.comb=list(Freq="sum",
+                                          color="ignor"))
+E(network.c)$color <- "gray"
+
+set.seed(1)
+plot(network.c, 
+     vertex.size=sqrt(V(network.c)$degree),
+     edge.width=sqrt(E(network.c)$Freq/100),
+     vertex.label.dist=4,
+     vertex.label.color="black")
+```
+
+```{r}
+V(network)[class == "Teachers"]$name
+V(network.c)[class == "Teachers"]$name
+
+```
 
 
 
