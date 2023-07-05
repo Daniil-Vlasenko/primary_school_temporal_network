@@ -1,5 +1,3 @@
-"0","library(nortest)"
-"0",""
 "0","print(paste(""Pearson"", pearson.test(vertices$degree)$p))"
 "1","[1]"
 "1"," ""Pearson 0.0101508474990328"""
