@@ -382,11 +382,17 @@ plot(network.c,
 
 ### Эгоцентрическая сеть.
 
+Построим эгоцентрическую сеть, в центре которой, например, будет учитель с наименьшим индексом. То есть сеть, в которой отражены соседи выбранной вершины и все связи между ними. Учителя с индексом 1521 поместим в центр и изменим его цвет на белый.
 ```{r}
-V(network)[class=="Teachers"]
+network.e <- make_ego_graph(network, order=1, nodes=V(network)[name=="1521"])
+V(network.e[[1]])$label <- ""
+V(network.e[[1]])[name=="1521"]$color <- "white"
 
-
-l <- make_ego_graph(network, nodes=V(nodes))
+set.seed(0)
+plot(network.e[[1]], 
+     vertex.size=sqrt(V(network.e[[1]])$degree), 
+     edge.width=E(network.e[[1]])$Freq/60,
+     layout=layout_with_fr)
 ```
 
 
