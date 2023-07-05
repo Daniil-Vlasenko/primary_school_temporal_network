@@ -3,9 +3,9 @@
     "path": "~/programming/R/Primary-school-temporal-network/Primary school temporal network.Rmd",
     "project_path": "Primary school temporal network.Rmd",
     "type": "r_markdown",
-    "hash": "0",
+    "hash": "604455777",
     "contents": "",
-    "dirty": true,
+    "dirty": false,
     "created": 1687181917973.0,
     "source_on_save": false,
     "relative_order": 1,
@@ -13,15 +13,15 @@
         "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "80,18",
-        "scrollLine": "77"
+        "cursorPosition": "193,25",
+        "scrollLine": "192"
     },
     "folds": "",
-    "lastKnownWriteTime": 1688576550,
+    "lastKnownWriteTime": 1688579436,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1688576579859,
+    "last_content_update": 1688579436171,
     "read_only": false,
     "read_only_alternatives": []
 }

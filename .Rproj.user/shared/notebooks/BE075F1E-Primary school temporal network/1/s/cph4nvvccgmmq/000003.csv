@@ -1,0 +1,6 @@
+"0","vertices %>%"
+"0","  ggplot(aes(x=degree, y=anwd, color=class)) +"
+"0","  geom_point() +"
+"0","  geom_smooth(method=""lm"", se = FALSE) +"
+"0","  xlab(""Weighted Vertex Degree"") +"
+"0","  ylab(""Average Neighbor Weighted Degree"")"
