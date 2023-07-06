@@ -1,0 +1,1 @@
+"0","(vertices %>% arrange(-transitivity))[1:10,]"

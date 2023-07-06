@@ -401,7 +401,7 @@ E(network)$color <- "black"
 
 set.seed(1)
 plot(network, 
-     vertex.size=sqrt(V(network)$degree)/2, 
+     vertex.size=sqrt(V(network)$wdegree/50), 
      edge.width=E(network)$Freq/400,
      vertex.label=NA,
      layout=layout_with_fr)
@@ -452,7 +452,7 @@ V(network.e[[1]])[name=="1521"]$color <- "white"
 
 set.seed(0)
 plot(network.e[[1]], 
-     vertex.size=sqrt(V(network.e[[1]])$degree*1.5), 
+     vertex.size=sqrt(V(network.e[[1]])$wdegree/6), 
      edge.width=E(network.e[[1]])$Freq/60,
      layout=layout_with_fr)
 ```
