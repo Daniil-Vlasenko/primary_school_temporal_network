@@ -182,24 +182,25 @@ vertices %>%
 ```
 
 Можно видеть положительную корреляцию, что означает, что общительные индивиды чаще взаимодействуют с общительными индивидами. Интересно посмотреть на этот же график, но с разделением по классам. Снизу слева видна отдельная группа людей, интересно, не учителя ли это.
+
 ```{r, message=FALSE}
-colors <- c("deeppink1","cyan4",
-            "brown1","olivedrab4",
-            "cyan1","deeppink4",
-            "olivedrab1","royalblue3",
-            "gold1","gold4",
-            "black")
+colors <- c("darkgrey","chocolate2","chartreuse3","darkgoldenrod3","deeppink3",
+            "coral3","blueviolet","cadetblue1","aquamarine2","antiquewhite2",black")
+scale_color_manual(values=c("",))
+
+V(network)[class == "Teachers"]$color <- "black"
+
+
 
 vertices %>%
   ggplot(aes(x=degree, y=anwd, color=class)) +
   geom_point() +
   geom_smooth(method="lm", se=FALSE) +
   xlab("Weighted Vertex Degree") +
-  ylab("Average Neighbor Weighted Degree") +
-  scale_color_manual(values=colors)
+  ylab("Average Neighbor Weighted Degree")
 ```
 
-Нет, это не были учителя. Так как 
+Нет, это не были учителя.
 
 Посчитаем корреляцию Пирсона для степеней вершин, то есть наклон регрессионной прямой, изображенной на предыдущем графике, а также корреляцию Спирмена:
 ```{r}
@@ -385,17 +386,17 @@ V(network)$label <- V(network)$name
 V(network)$shape <- "circle"
 V(network)[class=="Teachers"]$shape <- "square"
 
-V(network)[class == "1A"]$color <- "deeppink1"
-V(network)[class == "1B"]$color <- "cyan4"
-V(network)[class == "2A"]$color <- "brown1"
-V(network)[class == "2B"]$color <- "olivedrab4"
-V(network)[class == "3A"]$color <- "cyan1"
-V(network)[class == "3B"]$color <- "deeppink4"
-V(network)[class == "4A"]$color <- "olivedrab1"
-V(network)[class == "4B"]$color <- "royalblue3"
-V(network)[class == "5A"]$color <- "gold1"
-V(network)[class == "5B"]$color <- "gold4"
 V(network)[class == "Teachers"]$color <- "black"
+V(network)[class == "5B"]$color <- "antiquewhite2"
+V(network)[class == "5A"]$color <- "aquamarine2"
+V(network)[class == "4A"]$color <- "blueviolet"
+V(network)[class == "3B"]$color <- "coral3"
+V(network)[class == "4B"]$color <- "cadetblue1"
+V(network)[class == "2A"]$color <- "chartreuse3"
+V(network)[class == "1B"]$color <- "chocolate2"
+V(network)[class == "2B"]$color <- "darkgoldenrod3"
+V(network)[class == "1A"]$color <- "darkgrey"
+V(network)[class == "3A"]$color <- "deeppink3"
 
 E(network)$color <- "black"
 
