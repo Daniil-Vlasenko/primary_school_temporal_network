@@ -1,0 +1,473 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(viridis)
+library(gridExtra)
+library(tidyr)
+```
+
+```{r}
+median_tr_files = c("../results/tmp/features te w=0.0 r =1/high/median_tr.txt", 
+              "../results/tmp/features te w=0.0 r =1/low/median_tr.txt")
+
+median_test_files =c("../results/tmp/features te w=0.0 r =1/high/median_te.txt", 
+              "../results/tmp/features te w=0.0 r =1/low/median_te.txt")
+```
+
+```{r}
+median_tr_data_1 <- read.csv(median_tr_files[1]) %>% mutate(class="high", sample="train")
+median_tr_data_2 <- read.csv(median_tr_files[2]) %>% mutate(class="low", sample="train")
+
+median_te_data_1 <- read.csv(median_test_files[1]) %>% mutate(class="high", sample="test")
+median_te_data_2 <- read.csv(median_test_files[2]) %>% mutate(class="low", sample="test")
+
+median_tr_data <- rbind(median_tr_data_1, median_tr_data_2)
+median_te_data <- rbind(median_te_data_1, median_te_data_2)
+
+median_data <- rbind(median_tr_data, median_te_data)
+median_data$class_sample <- paste(median_data$class, median_data$sample)
+```
+
+```{r}
+median(median_tr_data_1$median)
+median(median_tr_data_2$median)
+```
+
+
+```{r, message=FALSE}
+median_data %>% 
+  ggpairs(diag=list(continuous = wrap("barDiag", alpha=0.7)), 
+          upper=list(continuous = wrap("blank")),
+          lower=list(continuous = wrap("points", alpha=0.7)),
+          aes(colour=class), legend=1, columns = c("median", "quantile_1", "quantile_2", "std"), 
+          columnLabels=c("median", "0.1-quantile", "0.9-quantile","std")) 
+```
+
+```{r, message=FALSE}
+median_data %>% 
+  ggpairs(diag=list(continuous = wrap("barDiag", alpha=0.7)), 
+          upper=list(continuous = wrap("blank")),
+          lower=list(continuous = wrap("points", alpha=0.7)),
+          aes(colour=sample), legend=1, columns = c("median", "quantile_1", "quantile_2", "std"), 
+          columnLabels=c("median", "0.1-quantile", "0.9-quantile","std")) 
+```
+
+```{r, message=FALSE}
+median_data %>% 
+  ggpairs(diag=list(continuous = wrap("barDiag", alpha=0.7)), 
+          upper=list(continuous = wrap("blank")),
+          lower=list(continuous = wrap("points", alpha=0.7)),
+          aes(colour=class_sample), legend=1, columns = c("median", "quantile_1", "quantile_2", "std"), 
+          columnLabels=c("median", "0.1-quantile", "0.9-quantile","std")) 
+```
+
+
+
+
+
+```{r}
+data_tr_per <- read.csv(file=mean_tr[1], sep=",")
+colnames(data_tr_per)
+```
+
+```{r}
+plot.1 <- function(tr, test) {
+  data_tr_per <- read.csv(file=tr[1], sep=",")
+  data_tr_im <- read.csv(file=tr[2], sep=",")
+  data_test_per <- read.csv(file=test[1], sep=",")
+  data_test_im <- read.csv(file=test[2], sep=",")
+  
+  data_per = rbind(data_tr_per, data_test_per) %>% mutate(mode = "seen")
+  data_im = rbind(data_tr_im, data_test_im) %>% mutate(mode = "imagined")
+  
+  data = rbind(data_per, data_im)
+  
+  data %>%
+  ggpairs(diag=list(continuous = wrap("barDiag", alpha=0.7)), 
+          upper=list(continuous = wrap("blank")),
+          lower=list(continuous = wrap("points", alpha=0.7)),
+          aes(colour=mode), legend=1, columns = c("mean", "median", "quantile_1", "quantile_2", "std"), 
+          columnLabels=c("mean", "median", "0.1-quantile", "0.9-quantile","std")
+          )
+}
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+plot.1(median_tr, median_test)
+# plot.1(quantiles_distance_tr, quantiles_distance_test)
+# ggsave("properties_T_median_w_02.pdf")
+# plot.1(min_tr, min_test)
+# plot.1(quantiles_distance_tr, quantiles_distance_test)
+```
+
+```{r}
+plot.2 <- function(tr, test) {
+  data_tr_per <- read.csv(file=tr[1], sep=",")
+  data_tr_im <- read.csv(file=tr[2], sep=",")
+  data_test_per <- read.csv(file=test[1], sep=",")
+  data_test_im <- read.csv(file=test[2], sep=",")
+  
+  data_per = rbind(data_tr_per, data_test_per) %>% mutate(mode = "seen")
+  data_im = rbind(data_tr_im, data_test_im) %>% mutate(mode = "imagined")
+  
+  data = rbind(data_per, data_im)
+  
+p1 <- data %>%
+        ggplot(aes(x=mode, y=mean, fill=mode)) +
+        geom_boxplot(outlier.shape = NA, alpha=0.7) + 
+        geom_jitter(color="black", size=0.4, alpha=0.9) + 
+        theme(legend.position = "none") +
+        ylab("mean")
+p2 <- data %>%
+        ggplot(aes(x=mode, y=quantile_1, fill=mode)) +
+        geom_boxplot(outlier.shape = NA, alpha=0.7) + 
+        geom_jitter(color="black", size=0.4, alpha=0.9) + 
+        theme(legend.position = "none") +
+        ylab("0.1-quantile")
+p3 <- data %>%
+        ggplot(aes(x=mode, y=quantile_2, fill=mode)) +
+        geom_boxplot(outlier.shape = NA, alpha=0.7) + 
+        geom_jitter(color="black", size=0.4, alpha=0.9) + 
+        theme(legend.position = "none") +
+        ylab("0.9-quantile")
+p4 <- data %>%
+        ggplot(aes(x=mode, y=std, fill=mode)) +
+        geom_boxplot(outlier.shape = NA, alpha=0.7) + 
+        geom_jitter(color="black", size=0.4, alpha=0.9) + 
+        theme(legend.position = "none") +
+        ylab("std")
+g<-grid.arrange(p1, p2, p3, p4, ncol = 4, nrow = 1)
+ggsave(file="properties_2.pdf", g)
+g
+}
+```
+
+```{r}
+plot.2(median_tr, median_test)
+```
+
+```{r}
+tr <- median_tr
+test <- median_test
+
+data_tr_per <- read.csv(file=tr[1], sep=",")
+data_tr_im <- read.csv(file=tr[2], sep=",")
+data_test_per <- read.csv(file=test[1], sep=",")
+data_test_im <- read.csv(file=test[2], sep=",")
+
+data_per = rbind(data_tr_per, data_test_per) %>% mutate(mode = "seen")
+data_im = rbind(data_tr_im, data_test_im) %>% mutate(mode = "imagined")
+
+data = rbind(data_per, data_im)
+  
+subject <- as.factor(c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5))
+
+ggplot(data, aes(x=quantile_1, y=quantile_2, color=subject))+
+  geom_point()
+ggsave("quantiles_T_median_w_02_subjects.pdf")
+
+subject.session <- c(11,11,11,11,11,11,11,12,12,12,12,12,12,12,12,13,13,21,21,21,21,21,21,21,22,22,22,22,22,22,22,22,23,23,31,31,31,31,31,31,32,32,32,32,32,32,33,33,33,33,33,33,41,41,41,41,41,41,42,42,42,42,42,42,43,43,43,43,43,43,51,51,51,51,51,51,52,52,53,53,53,53,54,55,11,11,11,11,11,11,12,12,12,12,12,12,13,13,21,21,21,21,21,21,22,22,22,22,22,22,23,23,31,31,32,32,32,32,32,33,33,33,33,33,33,33,41,41,41,41,41,41,42,42,42,42,42,43,43,43,51,51,51,52,52,52,52,52,52,53,53,54,54,55,11,11,11,12,12,13,13,21,21,21,22,22,23,23,31,31,32,32,33,33,41,41,42,42,43,43,51,51,52,52,53,53,54,54,55,55,11,11,12,12,13,13,21,21,22,22,23,23,31,31,32,32,33,33,41,41,42,42,43,43,51,51,52,52,53,53)
+
+subject1.session <- subject.session
+subject2.session <- subject.session
+subject3.session <- subject.session
+subject4.session <- subject.session
+subject5.session <- subject.session
+
+subject1.session <- subject.session[subject.session<20]
+subject2.session <- subject.session[subject.session>20 & subject.session<30]
+subject3.session <- subject.session[subject.session>30 & subject.session<40]
+subject4.session <- subject.session[subject.session>40 & subject.session<50]
+subject5.session <- subject.session[subject.session>50]
+
+data1 <- data[subject.session<20,]
+data2 <- data[subject.session>20 & subject.session<30,]
+data3 <- data[subject.session>30 & subject.session<40,]
+data4 <- data[subject.session>40 & subject.session<50,]
+data5 <- data[subject.session>50,]
+
+subject1.session <- as.factor(subject1.session)
+subject2.session <- as.factor(subject2.session)
+subject3.session <- as.factor(subject3.session)
+subject4.session <- as.factor(subject4.session)
+subject5.session <- as.factor(subject5.session)
+
+ggplot(data1, aes(x=quantile_1, y=quantile_2, color=subject1.session))+
+  geom_point()
+ggsave("quantiles_T_median_w_02_subject1_session.pdf")
+ggplot(data2, aes(x=quantile_1, y=quantile_2, color=subject2.session))+
+  geom_point()
+ggsave("quantiles_T_median_w_02_subject2_session.pdf")
+ggplot(data3, aes(x=quantile_1, y=quantile_2, color=subject3.session))+
+  geom_point()
+ggsave("quantiles_T_median_w_02_subject3_session.pdf")
+ggplot(data4, aes(x=quantile_1, y=quantile_2, color=subject4.session))+
+  geom_point()
+ggsave("quantiles_T_median_w_02_subject4_session.pdf")
+ggplot(data5, aes(x=quantile_1, y=quantile_2, color=subject5.session))+
+  geom_point()
+ggsave("quantiles_T_median_w_02_subject5_session.pdf")
+```
+
+
+
+```{r}
+tr <- median_tr
+test <- median_test
+
+data_tr_per <- read.csv(file=tr[1], sep=",")
+data_tr_im <- read.csv(file=tr[2], sep=",")
+data_test_per <- read.csv(file=test[1], sep=",")
+data_test_im <- read.csv(file=test[2], sep=",")
+
+data_per <- rbind(data_tr_per, data_test_per) %>% mutate(mode = "seen")
+data_im <- rbind(data_tr_im, data_test_im) %>% mutate(mode = "imagined")
+
+data <- rbind(data_per, data_im)
+
+nrow(data)
+```
+
+# Анализ ребер. 
+Читаем ребра.
+```{r, message=FALSE}
+# ed_tr <- c("../correlations/training/dimensionality_reduction_1/10_10_10/synolitic_method_1/edges/perception/median.txt","../correlations/training/dimensionality_reduction_1/10_10_10/synolitic_method_1/edges/imagery/median.txt")
+# 
+# ed_test <- c("../correlations/test/dimensionality_reduction_1/10_10_10/synolitic_method_1/edges/perception/median.txt", "../correlations/test/dimensionality_reduction_1/10_10_10/synolitic_method_1/edges/imagery/median.txt")
+# 
+# library(tidyr)
+# ed_tr_per <- read.csv(file=ed_tr[1], sep=",") %>% 
+#   mutate(mode="seen", sample="train") %>%
+#   gather("subject", "value", 3:6)
+# ed_tr_im <- read.csv(file=ed_tr[2], sep=",") %>% 
+#   mutate(mode="imagined", sample="train") %>%
+#   gather("subject", "value", 3:6)
+# ed_test_per <- read.csv(file=ed_test[1], sep=",") %>% 
+#   mutate(mode="seen", sample="test") %>%
+#   rename("X4" = "X0") %>%
+#   gather("subject", "value", 3)
+# ed_test_im <- read.csv(file=ed_test[2], sep=",") %>% 
+#   mutate(mode="imagined", sample="test") %>%
+#   rename("X4" = "X0") %>%
+#   gather("subject", "value", 3)
+# 
+# ed_per <- rbind(ed_tr_per, ed_test_per) 
+# ed_im <- rbind(ed_tr_im, ed_test_im) 
+# 
+# ed <- rbind(ed_per, ed_im)
+# ed1 <- ed 
+
+ed_tr <- c("../data_2/scalars/control_tr.txt","../data_2/scalars/adhd_tr.txt")
+ed_test <- c("../data_2/scalars/control_test.txt", "../data_2/scalars/adhd_test.txt")
+
+ed_tr_per <- read.csv(file=ed_tr[1], sep=",") %>%
+  mutate(mode="seen", sample="train") %>%
+  gather("subject", "value", 3:6)
+ed_tr_im <- read.csv(file=ed_tr[2], sep=",") %>%
+  mutate(mode="imagined", sample="train") %>%
+  gather("subject", "value", 3:6)
+ed_test_per <- read.csv(file=ed_test[1], sep=",") %>%
+  mutate(mode="seen", sample="test") %>%
+  rename("X4" = "X0") %>%
+  gather("subject", "value", 3)
+ed_test_im <- read.csv(file=ed_test[2], sep=",") %>%
+  mutate(mode="imagined", sample="test") %>%
+  rename("X4" = "X0") %>%
+  gather("subject", "value", 3)
+
+ed_per <- rbind(ed_tr_per, ed_test_per)
+ed_im <- rbind(ed_tr_im, ed_test_im)
+
+ed <- rbind(ed_per, ed_im)
+ed2 <- ed
+```
+
+Читаем вершины.
+```{r}
+v_tr <- c("../correlations/training/dimensionality_reduction_1/10_10_10/synolitic_method_1/scalars/perception/median.txt", "../correlations/training/dimensionality_reduction_1/10_10_10/synolitic_method_1/scalars/imagery/median.txt")
+v_test <- c("../correlations/test/dimensionality_reduction_1/10_10_10/synolitic_method_1/scalars/perception/median.txt", "../correlations/test/dimensionality_reduction_1/10_10_10/synolitic_method_1/scalars/imagery/median.txt")
+
+v_tr_per <- read.csv(file=v_tr[1], sep=" ", col.names =c("X0", "X1", "X2", "X3"))
+v_tr_per <- v_tr_per %>% mutate(index = 0:(nrow(v_tr_per) - 1)) %>%
+  mutate(mode="seen", sample="train") %>%
+  gather("subject", "value", 1:4)
+v_tr_im <- read.csv(file=v_tr[2], sep=" ", col.names =c("X0", "X1", "X2", "X3"))
+v_tr_im <- v_tr_im %>% mutate(index = 0:(nrow(v_tr_im) - 1)) %>%
+  mutate(mode="imagined", sample="train") %>%
+  gather("subject", "value", 1:4)
+v_test_per <- read.csv(file=v_test[1], sep=" ", col.names =c("X4")) 
+v_test_per <- v_test_per %>% mutate(index = 0:(nrow(v_test_per) - 1)) %>%
+  mutate(mode="seen", sample="test") %>%
+  gather("subject", "value", 1)
+v_test_im <- read.csv(file=v_test[2], sep=" ", col.names =c("X4"))
+v_test_im <- v_test_im %>% mutate(index = 0:(nrow(v_test_im) - 1)) %>%
+  mutate(mode="imagined", sample="test") %>%
+  gather("subject", "value", 1)
+
+v_per <- rbind(v_tr_per, v_test_per) 
+v_im <- rbind(v_tr_im, v_test_im) 
+
+v <- rbind(v_per, v_im)
+v1 <- v
+
+v_tr <- c("/home/daniil/Downloads/tmp/scalars/per_tr.txt","/home/daniil/Downloads/tmp/scalars/im_tr.txt")
+v_test <- c("/home/daniil/Downloads/tmp/scalars/per_test.txt", "/home/daniil/Downloads/tmp/scalars/im_test.txt")
+
+v_tr_per <- read.csv(file=v_tr[1], sep=" ", col.names =c("X0", "X1", "X2", "X3"))
+v_tr_per <- v_tr_per %>% mutate(index = 0:(nrow(v_tr_per) - 1)) %>%
+  mutate(mode="seen", sample="train") %>%
+  gather("subject", "value", 1:4)
+v_tr_im <- read.csv(file=v_tr[2], sep=" ", col.names =c("X0", "X1", "X2", "X3"))
+v_tr_im <- v_tr_im %>% mutate(index = 0:(nrow(v_tr_im) - 1)) %>%
+  mutate(mode="imagined", sample="train") %>%
+  gather("subject", "value", 1:4)
+v_test_per <- read.csv(file=v_test[1], sep=" ", col.names =c("X4"))
+v_test_per <- v_test_per %>% mutate(index = 0:(nrow(v_test_per) - 1)) %>%
+  mutate(mode="seen", sample="test") %>%
+  gather("subject", "value", 1)
+v_test_im <- read.csv(file=v_test[2], sep=" ", col.names =c("X4"))
+v_test_im <- v_test_im %>% mutate(index = 0:(nrow(v_test_im) - 1)) %>%
+  mutate(mode="imagined", sample="test") %>%
+  gather("subject", "value", 1)
+
+v_per <- rbind(v_tr_per, v_test_per)
+v_im <- rbind(v_tr_im, v_test_im)
+
+v <- rbind(v_per, v_im)
+v2 <- v
+```
+
+Объединяем данные и удаляем нунужные ребра.
+```{r}
+r <- 1
+w <- 0.5
+
+v <- v1
+data <- inner_join(ed, v, by=c("mode", "sample", "subject", "sours"="index")) %>%
+  rename("value.w" = "value.x", "value.sours" = "value.y")
+data <- inner_join(data, v, by=c("mode", "sample", "subject", "target"="index")) %>%
+  rename("value.target" = "value")
+
+data.new <- data %>% filter(value.sours > r, value.target > r)
+data.new <- data.new %>% filter(abs(value.w) > w)
+nrow(data)- nrow(data.new)
+data.new1 <- data.new
+
+v <- v2
+data <- inner_join(ed, v, by=c("mode", "sample", "subject", "sours"="index")) %>%
+  rename("value.w" = "value.x", "value.sours" = "value.y")
+data <- inner_join(data, v, by=c("mode", "sample", "subject", "target"="index")) %>%
+  rename("value.target" = "value")
+
+data.new <- data %>% filter(value.sours > r, value.target > r)
+data.new <- data.new %>% filter(abs(value.w) > w)
+nrow(data)- nrow(data.new)
+data.new2 <- data.new
+
+
+```
+
+Анализ данных.
+```{r}
+data.new1 %>%
+  group_by(mode, subject) %>%
+  summarise(mean(value.w), median(value.w), n()/((n()*(n()-1))/2), var(value.w), 
+            quantile(value.w, 0.9), quantile(value.w, 0.1))
+data.new2 %>%
+  group_by(mode, subject) %>%
+  summarise(mean(value.w), median(value.w), n()/((n()*(n()-1))/2), var(value.w), 
+            quantile(value.w, 0.9), quantile(value.w, 0.1))
+```
+
+Изобразим данные как-нибудь.
+```{r}
+ggplot(data.new1 %>% mutate(subject.mode = interaction(subject, mode)), 
+       aes(x=subject.mode, y=value.w)) +
+         geom_boxplot()
+ggplot(data.new2 %>% mutate(subject.mode = interaction(subject, mode)), 
+       aes(x=subject.mode, y=value.w)) +
+         geom_boxplot()
+```
+Посмотрим на выжные ребра.
+```{r}
+# ed1 %>% filter("value" > 0.2)
+#   group_by(sours, target) %>%
+#   summarise(mean(value), median(value), var(value), max(value))
+  
+data.new1.s <- data.new1 %>% 
+  group_by(sours, target, mode) %>%
+  summarise(mean=mean(value.w), median(value.w), var(value.w), 
+            min(value.w), max(value.w), n=n())
+data.new2.s <- data.new2 %>%
+  group_by(sours, target, mode) %>%
+  summarise(mean = mean(value.w), median(value.w), var(value.w), 
+            min(value.w), max(value.w), n=n())
+
+data.new1.s %>% filter(abs(mean) > 0.5)
+data.new2.s %>% filter(abs(mean) > 0.5)
+```
+
+```{r}
+v1 <- 1818
+v2 <- 1832
+
+# 
+# df <- data.new2 %>% filter(sours==v1) %>% distinct(target, mode, .keep_all=TRUE) 
+# df <- rbind(df, data.new2 %>% filter(sours==v2) %>% distinct(target, mode, .keep_all=TRUE) )
+# df %>% mutate(sours=as.factor(sours))
+# 
+# ggplot(df, aes(x=value.sours, color=mode))+
+#   geom_histogram(aes(bins = 1000))
+
+unique(filter(data.new2, sours==v1, mode=="imagined", sample!="test")$value.sours)
+unique(filter(data.new2, sours==v1, mode=="seen", sample!="test")$value.sours)
+unique(filter(data.new2, sours==v2, mode=="imagined", sample!="test")$value.sours)
+unique(filter(data.new2, sours==v2, mode=="seen", sample!="test")$value.sours)
+print("---")
+unique(filter(data.new2, sours==v1, mode=="imagined")$value.sours)
+unique(filter(data.new2, sours==v1, mode=="seen")$value.sours)
+unique(filter(data.new2, sours==v2, mode=="imagined")$value.sours)
+unique(filter(data.new2, sours==v2, mode=="seen")$value.sours)
+
+```
+
+
+# Анализ вокселей.
+Анилз данных.
+```{r}
+v1 %>%
+  group_by(mode, subject) %>%
+  summarise(mean(value), median(value), var(value), 
+            quantile(value, 0.9), quantile(value, 0.1))
+v2 %>%
+  group_by(mode, subject) %>%
+  summarise(mean(value), median(value), var(value), 
+            quantile(value, 0.9), quantile(value, 0.1))
+```
+
+Изобразим данные как-нибудь.
+```{r}
+ggplot(v1 %>% mutate(subject.mode = interaction(subject, mode)), 
+       aes(x=subject.mode, y=value)) +
+         geom_boxplot()
+
+ggplot(v2 %>% mutate(subject.mode = interaction(subject, mode)), 
+       aes(x=subject.mode, y=value)) +
+         geom_boxplot()
+```
+Посмотрим на важные воксели.
+```{r}
+ed1 %>%
+  group_by(sours, target) %>%
+  summarise(mean(value), median(value), var(value), max(value))
+
+```
+
+

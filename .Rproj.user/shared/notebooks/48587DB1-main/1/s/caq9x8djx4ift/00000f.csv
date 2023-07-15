@@ -1,0 +1,6 @@
+"0","median_data %>% "
+"0","  ggpairs(diag=list(continuous = wrap(""barDiag"", alpha=0.7)), "
+"0","          upper=list(continuous = wrap(""blank"")),"
+"0","          lower=list(continuous = wrap(""points"", alpha=0.7)),"
+"0","          aes(colour=sample), legend=1, columns = c(""median"", ""quantile_1"", ""quantile_2"", ""std""), "
+"0","          columnLabels=c(""median"", ""0.1-quantile"", ""0.9-quantile"",""std"")) "

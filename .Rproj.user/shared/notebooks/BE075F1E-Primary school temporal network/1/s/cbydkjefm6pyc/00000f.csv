@@ -1,0 +1,6 @@
+"0","V(network)$closeness <- closeness(network, weights=1/E(network)$Freq)"
+"0","vertices$closeness <- V(network)$closeness"
+"0","V(network)$betweenness <- betweenness(network, weights=1/E(network)$Freq)"
+"0","vertices$betweenness <- V(network)$betweenness"
+"0","V(network)$evcent <- evcent(network, weights=1/E(network)$Freq)$vector"
+"0","vertices$evcent <- V(network)$evcent"
