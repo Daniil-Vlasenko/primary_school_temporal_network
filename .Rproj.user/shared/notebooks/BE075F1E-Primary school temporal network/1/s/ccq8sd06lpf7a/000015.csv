@@ -1,0 +1,1 @@
+"0","(vertices %>% arrange(-closeness))[1:10,]"

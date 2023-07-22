@@ -1,0 +1,1 @@
+"0","network <- graph_from_data_frame(data1, directed=FALSE, vertices=data2)"

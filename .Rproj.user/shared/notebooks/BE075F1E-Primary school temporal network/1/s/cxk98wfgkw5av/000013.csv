@@ -1,0 +1,1 @@
+"0","(vertices %>% arrange(-betweenness))[1:10,]"

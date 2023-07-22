@@ -1,0 +1,5 @@
+"0","# sna::gplot.target(g, V(subgraph)$betweenness,"
+"0","#    circ.lab = FALSE,"
+"0","#    circ.col=""skyblue"", usearrows = FALSE,"
+"0","#    vertex.col=V(subgraph)$color,"
+"0","#    edge.col=""darkgray"")"
